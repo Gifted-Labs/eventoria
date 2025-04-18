@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.NaturalId;
 
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,7 +21,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String id;
+    private Long id;
     private String firstName;
     private String lastName;
     private String username;
@@ -34,7 +36,12 @@ public class User {
     private String city;
     private String state;
     private String country;
-    private boolean isEnabled;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private boolean isVerified = false;
+    private boolean isEnabled = false;
+
+
 
 
     // Add any other fields or methods as needed

@@ -38,7 +38,6 @@ public class User {
     private String country;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean isVerified = false;
     private boolean isEnabled = false;
 
 

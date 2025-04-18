@@ -1,5 +1,6 @@
 package com.giftedlabs.eventoria.users;
 
+import com.giftedlabs.eventoria.enums.UserRole;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -28,11 +29,11 @@ public class User {
     private String password;
     @NaturalId(mutable = false)
     private String phoneNumber;
+    private UserRole role;
     private String address;
     private String city;
     private String state;
     private String country;
-    private String zipCode;
     private boolean isEnabled;
 
 

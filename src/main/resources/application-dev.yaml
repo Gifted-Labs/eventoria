@@ -6,3 +6,6 @@ spring:
 
 app:
   jwtSecret: ${JWT_SECRET_DEV}
+
+server:
+  port: 5000

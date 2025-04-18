@@ -2,6 +2,8 @@ package com.giftedlabs.eventoria.authentication.service.impl;
 
 import com.giftedlabs.eventoria.authentication.dto.*;
 import com.giftedlabs.eventoria.enums.UserRole;
+import com.giftedlabs.eventoria.exception.InvalidTokenException;
+import com.giftedlabs.eventoria.exception.TokenExpiredException;
 import com.giftedlabs.eventoria.jwt.JwtService;
 import com.giftedlabs.eventoria.users.User;
 import com.giftedlabs.eventoria.users.UserRepository;
@@ -18,6 +20,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,12 +62,16 @@ public class AuthenticationService {
                 city(signUpRequest.city()).
                 state(signUpRequest.state()).
                 country(signUpRequest.country()).
-                role(UserRole.ROLE_ATTENDEE).
+                createdAt(LocalDateTime.now()).
+                role(UserRole.ROLE_ADMIN).
                 isEnabled(false).
                 build();
 
         // Generate JWT token
         String token = jwtService.generateVerificationToken(user.getEmail());
+
+        // Save user to database
+        userRepository.save(user);
 
         return new MessageResponse("User registered successfully! Verification token: " + token);
     }
@@ -104,8 +111,6 @@ public class AuthenticationService {
             }
                 user.setEnabled(true);
                 userRepository.save(user);
-                return new MessageResponse("User verified successfully.");
-
 
             return new MessageResponse("Account verified successfully");
         }
@@ -117,8 +122,8 @@ public class AuthenticationService {
     }
 
 
-    public MessageResponse requestPasswordReset(PasswordResetRequest passwordResetRequest) {
-        User user = userRepository.findByEmail()
+    public MessageResponse requestPasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Error: User is not found."));
 
         String token = jwtService.generateVerificationToken(user.getEmail());

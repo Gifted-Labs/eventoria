@@ -28,6 +28,12 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             AuthenticationException authException) throws IOException, ServletException {
 
         logger.error("Unauthorized error: {}", authException.getMessage());
+            // Get the actual cause if available
+            Throwable cause = authException.getCause();
+            if (cause != null) {
+                logger.error("Root cause: {}", cause.getMessage());
+            }
+
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 

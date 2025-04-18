@@ -58,3 +58,4 @@ build/
 hs_err_pid*
 replay_pid*
 >>>>>>> acb8e46228ca9d06797699e9056036727984e216
+.env

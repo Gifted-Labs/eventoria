@@ -3,721 +3,1059 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eventoria - Authentication</title>
+    <title>Eventoria Authentication</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4B4ABE',
+                        'primary-light': '#7776E5',
+                        secondary: '#FF7E5F',
+                        'secondary-dark': '#FF6347',
+                        dark: {
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        'soft-dark': '0 4px 20px rgba(0, 0, 0, 0.2)',
+                    }
+                }
+            }
         }
-        .auth-container {
-            background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+    </script>
+    <style type="text/css">
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        .loader {
+            border-top-color: #5D5CDE;
+            animation: spin 1s linear infinite;
         }
-        .btn-primary {
-            background-color: #005152;
-            transition: all 0.3s ease;
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .btn-primary:hover {
-            background-color: #003a3a;
-            transform: translateY(-2px);
+
+        .form-fade-in {
+            animation: fadeIn 0.6s ease-in-out;
         }
-        .form-input:focus {
-            border-color: #005152;
-            box-shadow: 0 0 0 3px rgba(0, 81, 82, 0.1);
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .tab-active {
-            border-bottom: 3px solid #005152;
-            color: #005152;
-            font-weight: 600;
+
+        .password-criteria li.valid {
+            color: #10B981;
         }
-        .password-strength {
-            height: 4px;
-            transition: all 0.3s ease;
+
+        .password-criteria li.invalid {
+            color: #EF4444;
         }
-        .strength-0 { width: 0%; background-color: #dc2626; }
-        .strength-1 { width: 25%; background-color: #ef4444; }
-        .strength-2 { width: 50%; background-color: #f59e0b; }
-        .strength-3 { width: 75%; background-color: #84cc16; }
-        .strength-4 { width: 100%; background-color: #10b981; }
+
+        .dark .password-criteria li.valid {
+            color: #34D399;
+        }
+
+        .dark .password-criteria li.invalid {
+            color: #F87171;
+        }
+
+        /* Custom input styles */
+        .input-focus-effect {
+            position: relative;
+        }
+
+        .input-focus-effect:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #5D5CDE;
+            transition: width 0.3s ease;
+        }
+
+        .dark .input-focus-effect:after {
+            background-color: #7776E5;
+        }
+
+        .input-focus-effect input:focus ~ :after {
+            width: 100%;
+        }
+
+        /* Toast notification */
+        .toast {
+            animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
+            z-index: 9999;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; visibility: hidden; }
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-<div class="auth-container w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
-    <!-- Left Side - Branding -->
-    <div class="hidden md:block md:w-1/2 bg-[#005152] text-white p-12 flex flex-col justify-between">
-        <div>
-            <h1 class="text-3xl font-bold mb-2">Eventoria</h1>
-            <p class="text-[#a3e0e0]">Your premier event management platform</p>
-        </div>
-        <div class="mt-8">
-            <h2 class="text-2xl font-semibold mb-4">Streamline Your Events</h2>
-            <p class="text-[#c4f1f1] mb-6">Join thousands of organizers and attendees creating memorable experiences.</p>
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-full bg-[#007777] flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <span class="text-sm">Secure authentication</span>
+<body class="font-sans min-h-screen bg-gray-50 transition-colors duration-300 dark:bg-gray-900">
+<!-- Toast notifications container -->
+<div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-3 max-w-md"></div>
+
+<!-- Main container -->
+<div class="container mx-auto px-4 py-8 md:py-16 flex justify-center items-center min-h-screen">
+    <!-- Auth card container -->
+    <div id="auth-container" class="w-full max-w-md mx-auto bg-white rounded-2xl shadow-soft overflow-hidden dark:bg-gray-800 dark:shadow-soft-dark transition-all duration-300">
+        <!-- Logo and branding section -->
+        <div class="flex justify-center p-6 bg-primary bg-opacity-10 dark:bg-opacity-20">
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-primary dark:text-primary-light">Eventoria</h1>
+                <p class="text-gray-600 dark:text-gray-300 mt-1">Your Event Management Platform</p>
             </div>
         </div>
-        <div class="text-[#a3e0e0] text-sm">
-            <p>© 2023 Eventoria. All rights reserved.</p>
+
+        <!-- Auth forms container -->
+        <div class="p-6">
+            <!-- Login Form -->
+            <div id="login-form" class="form-fade-in">
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center">Welcome Back</h2>
+                <form id="signin-form" class="space-y-5">
+                    <div>
+                        <label for="usernameOrEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username or Email</label>
+                        <input type="text" id="usernameOrEmail" name="usernameOrEmail" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter your username or email" required>
+                        <p id="usernameOrEmail-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                            <button type="button" id="forgot-password-link" class="text-sm font-medium text-primary dark:text-primary-light hover:underline">Forgot Password?</button>
+                        </div>
+                        <div class="relative">
+                            <input type="password" id="password" name="password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter your password" required>
+                            <button type="button" class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p id="password-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="remember-me" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700">
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">Remember me</label>
+                    </div>
+                    <button type="submit" class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-colors flex justify-center items-center">
+                        <span id="login-btn-text">Sign In</span>
+                        <div id="login-spinner" class="hidden w-5 h-5 border-2 border-white border-opacity-50 rounded-full loader ml-2"></div>
+                    </button>
+                </form>
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Don't have an account?
+                        <button id="create-account-link" class="font-medium text-primary dark:text-primary-light hover:underline">Create an account</button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="form-fade-in hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center">Create Account</h2>
+                <form id="signup-form" class="space-y-4">
+                    <!-- Personal Information section -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
+                            <input type="text" id="firstName" name="firstName" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="First name" required>
+                            <p id="firstName-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Last name" required>
+                            <p id="lastName-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                        <input type="text" id="username" name="username" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Choose a username" required>
+                        <p id="username-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <input type="email" id="email" name="email" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter your email" required>
+                        <p id="email-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                    </div>
+                    <div>
+                        <label for="phoneNumber" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
+                        <input type="tel" id="phoneNumber" name="phoneNumber" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter your phone number" required>
+                        <p id="phoneNumber-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                    </div>
+                    <div>
+                        <label for="signupPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="signupPassword" name="signupPassword" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Create a password" required>
+                            <button type="button" class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p id="signupPassword-error" class="text-red-500 text-xs mt-1 hidden"></p>
+                        <ul class="password-criteria mt-2 text-xs space-y-1 text-gray-600 dark:text-gray-400 pl-5 list-disc">
+                            <li id="length-check" class="invalid">At least 8 characters</li>
+                            <li id="lowercase-check" class="invalid">One lowercase letter</li>
+                            <li id="uppercase-check" class="invalid">One uppercase letter</li>
+                            <li id="digit-check" class="invalid">One number</li>
+                            <li id="special-check" class="invalid">One special character</li>
+                            <li id="whitespace-check" class="valid">No whitespace</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address (Optional)</label>
+                        <input type="text" id="address" name="address" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter your address">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="city" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City (Optional)</label>
+                            <input type="text" id="city" name="city" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="City">
+                        </div>
+                        <div>
+                            <label for="state" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">State (Optional)</label>
+                            <input type="text" id="state" name="state" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="State">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="country" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country (Optional)</label>
+                        <input type="text" id="country" name="country" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Country">
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="terms" name="terms" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700" required>
+                        <label for="terms" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">I agree to the <a href="#" class="text-primary dark:text-primary-light hover:underline">Terms and Conditions</a></label>
+                    </div>
+                    <button type="submit" class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-colors flex justify-center items-center">
+                        <span id="register-btn-text">Create Account</span>
+                        <div id="register-spinner" class="hidden w-5 h-5 border-2 border-white border-opacity-50 rounded-full loader ml-2"></div>
+                    </button>
+                </form>
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Already have an account?
+                        <button id="login-link" class="font-medium text-primary dark:text-primary-light hover:underline">Sign in</button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Forgot Password Form -->
+            <div id="forgot-password-form" class="form-fade-in hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center">Forgot Password</h2>
+                <p class="text-center text-gray-600 dark:text-gray-400 mb-6">Enter your email address and we'll send you a link to reset your password.</p>
+                <form id="forgot-pw-form" class="space-y-5">
+                    <div>
+                        <label for="forgot-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <input type="email" id="forgot-email" name="forgot-email" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter your email" required>
+                        <p id="forgot-email-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                    </div>
+                    <button type="submit" class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-colors flex justify-center items-center">
+                        <span id="forgot-btn-text">Send Reset Link</span>
+                        <div id="forgot-spinner" class="hidden w-5 h-5 border-2 border-white border-opacity-50 rounded-full loader ml-2"></div>
+                    </button>
+                </form>
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        <button id="back-to-login" class="font-medium text-primary dark:text-primary-light hover:underline">
+                            <i class="fas fa-arrow-left mr-1"></i> Back to Login
+                        </button>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Reset Password Form -->
+            <div id="reset-password-form" class="form-fade-in hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center">Reset Password</h2>
+                <form id="reset-pw-form" class="space-y-5">
+                    <input type="hidden" id="reset-token" name="reset-token">
+                    <div>
+                        <label for="new-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                        <div class="relative">
+                            <input type="password" id="new-password" name="new-password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Create a new password" required>
+                            <button type="button" class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p id="new-password-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                        <ul class="password-criteria mt-2 text-xs space-y-1 text-gray-600 dark:text-gray-400 pl-5 list-disc">
+                            <li id="reset-length-check" class="invalid">At least 8 characters</li>
+                            <li id="reset-lowercase-check" class="invalid">One lowercase letter</li>
+                            <li id="reset-uppercase-check" class="invalid">One uppercase letter</li>
+                            <li id="reset-digit-check" class="invalid">One number</li>
+                            <li id="reset-special-check" class="invalid">One special character</li>
+                            <li id="reset-whitespace-check" class="valid">No whitespace</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <label for="confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
+                        <div class="relative">
+                            <input type="password" id="confirm-password" name="confirm-password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Confirm your new password" required>
+                            <button type="button" class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p id="confirm-password-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                    </div>
+                    <button type="submit" class="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-colors flex justify-center items-center">
+                        <span id="reset-btn-text">Reset Password</span>
+                        <div id="reset-spinner" class="hidden w-5 h-5 border-2 border-white border-opacity-50 rounded-full loader ml-2"></div>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Email Verification -->
+            <div id="email-verification-form" class="form-fade-in hidden">
+                <div class="text-center">
+                    <div id="verification-loading" class="mb-6">
+                        <div class="w-12 h-12 border-4 border-gray-200 border-t-primary rounded-full loader mx-auto"></div>
+                        <p class="mt-4 text-gray-600 dark:text-gray-400">Verifying your email...</p>
+                    </div>
+                    <div id="verification-success" class="hidden">
+                        <div class="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-2xl text-green-500 dark:text-green-400"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white mt-4">Email Verified!</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Your email has been successfully verified.</p>
+                        <button id="verification-login-btn" class="mt-6 bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-colors">
+                            Proceed to Login
+                        </button>
+                    </div>
+                    <div id="verification-error" class="hidden">
+                        <div class="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-times text-2xl text-red-500 dark:text-red-400"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white mt-4">Verification Failed</h3>
+                        <p id="verification-error-message" class="text-gray-600 dark:text-gray-400 mt-2">Unable to verify your email. The link may have expired or is invalid.</p>
+                        <button id="verification-retry-btn" class="mt-6 bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-50 transition-colors">
+                            Back to Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Pages -->
+            <div id="welcome-page" class="form-fade-in hidden">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 mx-auto bg-primary bg-opacity-20 dark:bg-opacity-30 rounded-full flex items-center justify-center">
+                        <i id="welcome-icon" class="fas fa-user text-2xl text-primary dark:text-primary-light"></i>
+                    </div>
+                    <h2 id="welcome-title" class="text-2xl font-semibold text-gray-800 dark:text-white mt-4">Welcome!</h2>
+                    <p id="welcome-message" class="text-gray-600 dark:text-gray-400 mt-2">You're successfully logged in.</p>
+                </div>
+                <div id="user-info" class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                    <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-medium">Username:</span> <span id="info-username">-</span></p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 mt-1"><span class="font-medium">Email:</span> <span id="info-email">-</span></p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 mt-1"><span class="font-medium">Roles:</span> <span id="info-roles">-</span></p>
+                </div>
+                <button id="logout-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white font-medium py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600 focus:ring-opacity-50 transition-colors">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Sign Out
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Right Side - Authentication Forms -->
-    <div class="w-full md:w-1/2 bg-white p-8 md:p-12">
-        <!-- Tabs Navigation -->
-        <div class="flex border-b border-gray-200 mb-8">
-            <button id="login-tab" class="tab-active py-2 px-4 font-medium text-sm focus:outline-none">Sign In</button>
-            <button id="register-tab" class="py-2 px-4 font-medium text-sm text-gray-500 focus:outline-none">Sign Up</button>
-        </div>
-
-        <!-- Login Form -->
-        <div id="login-form" class="space-y-6">
-            <h2 class="text-2xl font-bold text-gray-800">Welcome back</h2>
-            <p class="text-gray-600">Sign in to your account to continue</p>
-
-            <div id="login-error" class="hidden p-3 rounded-md bg-red-50 text-red-700 text-sm"></div>
-
-            <form id="signin-form" class="space-y-4">
-                <div>
-                    <label for="login-identifier" class="block text-sm font-medium text-gray-700 mb-1">Email or Username</label>
-                    <input type="text" id="login-identifier" name="usernameOrEmail" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                           placeholder="Enter your email or username">
-                </div>
-                <div>
-                    <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <div class="relative">
-                        <input type="password" id="login-password" name="password" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="Enter your password">
-                        <button type="button" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="togglePasswordVisibility('login-password')">
-                            <svg id="login-eye" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                            </svg>
-                            <svg id="login-eye-slash" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
-                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="mt-1 flex justify-end">
-                        <button type="button" onclick="showForgotPassword()" class="text-sm text-[#005152] hover:underline focus:outline-none">Forgot password?</button>
-                    </div>
-                </div>
-                <button type="submit" class="w-full btn-primary text-white py-2.5 px-4 rounded-md font-medium flex items-center justify-center">
-                    <span id="login-btn-text">Sign In</span>
-                    <svg id="login-spinner" class="hidden ml-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </button>
-            </form>
-
-            <div class="relative">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-gray-300"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <button type="button" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0110 4.844c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.14 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-                <button type="button" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 5.523 4.477 10 10 10 5.523 0 10-4.477 10-10 0-5.523-4.477-10-10-10zm4.293 15.707a1 1 0 01-1.414 1.414L10 11.414l-2.879 2.879a1 1 0 01-1.414-1.414L8.586 10 5.707 7.121a1 1 0 011.414-1.414L10 8.586l2.879-2.879a1 1 0 011.414 1.414L11.414 10l2.879 2.879z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Register Form -->
-        <div id="register-form" class="hidden space-y-6">
-            <h2 class="text-2xl font-bold text-gray-800">Create an account</h2>
-            <p class="text-gray-600">Join our community today</p>
-
-            <div id="register-error" class="hidden p-3 rounded-md bg-red-50 text-red-700 text-sm"></div>
-            <div id="register-success" class="hidden p-3 rounded-md bg-green-50 text-green-700 text-sm"></div>
-
-            <form id="signup-form" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="first-name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                        <input type="text" id="first-name" name="firstName" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="John">
-                    </div>
-                    <div>
-                        <label for="last-name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                        <input type="text" id="last-name" name="lastName" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="Doe">
-                    </div>
-                </div>
-                <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" id="username" name="username" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                           placeholder="johndoe">
-                </div>
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="email" name="email" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                           placeholder="john@example.com">
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <div class="relative">
-                        <input type="password" id="password" name="password" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="••••••••" oninput="checkPasswordStrength(this.value)">
-                        <button type="button" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="togglePasswordVisibility('password')">
-                            <svg id="register-eye" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                            </svg>
-                            <svg id="register-eye-slash" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
-                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="mt-1">
-                        <div class="password-strength strength-0 mb-1 rounded-full"></div>
-                        <p id="password-hint" class="text-xs text-gray-500">Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character</p>
-                    </div>
-                </div>
-                <div>
-                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input type="tel" id="phone" name="phoneNumber" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                           placeholder="+1234567890">
-                </div>
-                <div>
-                    <label for="address" class="block text-sm font-medium text-gray-700 mb-1">Address (Optional)</label>
-                    <input type="text" id="address" name="address"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                           placeholder="123 Main St">
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label for="city" class="block text-sm font-medium text-gray-700 mb-1">City (Optional)</label>
-                        <input type="text" id="city" name="city"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="New York">
-                    </div>
-                    <div>
-                        <label for="state" class="block text-sm font-medium text-gray-700 mb-1">State (Optional)</label>
-                        <input type="text" id="state" name="state"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="NY">
-                    </div>
-                    <div>
-                        <label for="country" class="block text-sm font-medium text-gray-700 mb-1">Country (Optional)</label>
-                        <input type="text" id="country" name="country"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="USA">
-                    </div>
-                </div>
-                <button type="submit" class="w-full btn-primary text-white py-2.5 px-4 rounded-md font-medium flex items-center justify-center">
-                    <span id="register-btn-text">Sign Up</span>
-                    <svg id="register-spinner" class="hidden ml-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </button>
-            </form>
-
-            <div class="text-center text-sm text-gray-600">
-                <p>Already have an account? <button onclick="showLogin()" class="text-[#005152] hover:underline focus:outline-none">Sign in</button></p>
-            </div>
-        </div>
-
-        <!-- Forgot Password Form -->
-        <div id="forgot-password-form" class="hidden space-y-6">
-            <h2 class="text-2xl font-bold text-gray-800">Reset your password</h2>
-            <p class="text-gray-600">Enter your email to receive a reset link</p>
-
-            <div id="forgot-error" class="hidden p-3 rounded-md bg-red-50 text-red-700 text-sm"></div>
-            <div id="forgot-success" class="hidden p-3 rounded-md bg-green-50 text-green-700 text-sm"></div>
-
-            <form id="forgot-form" class="space-y-4">
-                <div>
-                    <label for="forgot-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="forgot-email" name="email" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                           placeholder="john@example.com">
-                </div>
-                <button type="submit" class="w-full btn-primary text-white py-2.5 px-4 rounded-md font-medium flex items-center justify-center">
-                    <span id="forgot-btn-text">Send Reset Link</span>
-                    <svg id="forgot-spinner" class="hidden ml-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </button>
-            </form>
-
-            <div class="text-center text-sm text-gray-600">
-                <button onclick="showLogin()" class="text-[#005152] hover:underline focus:outline-none">Back to sign in</button>
-            </div>
-        </div>
-
-        <!-- Reset Password Form -->
-        <div id="reset-password-form" class="hidden space-y-6">
-            <h2 class="text-2xl font-bold text-gray-800">Set new password</h2>
-            <p class="text-gray-600">Create a new password for your account</p>
-
-            <div id="reset-error" class="hidden p-3 rounded-md bg-red-50 text-red-700 text-sm"></div>
-            <div id="reset-success" class="hidden p-3 rounded-md bg-green-50 text-green-700 text-sm"></div>
-
-            <form id="reset-form" class="space-y-4">
-                <input type="hidden" id="reset-token" name="token">
-                <div>
-                    <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                    <div class="relative">
-                        <input type="password" id="new-password" name="newPassword" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="••••••••" oninput="checkPasswordStrength(this.value, 'reset')">
-                        <button type="button" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="togglePasswordVisibility('new-password')">
-                            <svg id="reset-eye" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                            </svg>
-                            <svg id="reset-eye-slash" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
-                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="mt-1">
-                        <div id="reset-strength" class="password-strength strength-0 mb-1 rounded-full"></div>
-                        <p id="reset-hint" class="text-xs text-gray-500">Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character</p>
-                    </div>
-                </div>
-                <div>
-                    <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                    <div class="relative">
-                        <input type="password" id="confirm-password" name="confirmPassword" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#005152] form-input"
-                               placeholder="••••••••">
-                        <button type="button" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="togglePasswordVisibility('confirm-password')">
-                            <svg id="confirm-eye" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                            </svg>
-                            <svg id="confirm-eye-slash" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
-                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <button type="submit" class="w-full btn-primary text-white py-2.5 px-4 rounded-md font-medium flex items-center justify-center">
-                    <span id="reset-btn-text">Reset Password</span>
-                    <svg id="reset-pw-spinner" class="hidden ml-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Dashboard Modal (shown after successful login) -->
-<div id="dashboard-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold text-gray-800" id="dashboard-title">Welcome</h3>
-            <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div class="space-y-4">
-            <p id="dashboard-message" class="text-gray-600"></p>
-            <div class="flex justify-end">
-                <button onclick="logout()" class="px-4 py-2 bg-[#005152] text-white rounded-md hover:bg-[#003a3a]">Logout</button>
-            </div>
-        </div>
-    </div>
+    <!-- Theme toggle button -->
+    <button id="theme-toggle" class="fixed bottom-6 right-6 bg-white text-gray-800 dark:bg-gray-800 dark:text-white p-3 rounded-full shadow-md hover:shadow-lg transition-all">
+        <i class="fas fa-moon dark:hidden"></i>
+        <i class="fas fa-sun hidden dark:block"></i>
+    </button>
 </div>
 
 <script>
-    // Check for token in URL (for password reset and email verification)
-    document.addEventListener('DOMContentLoaded', function() {
+    // Check for dark mode preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+    }
+
+    // Listen for changes in color scheme preference
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+        if (event.matches) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    });
+
+    // DOM Elements
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const forgotPasswordForm = document.getElementById('forgot-password-form');
+    const resetPasswordForm = document.getElementById('reset-password-form');
+    const emailVerificationForm = document.getElementById('email-verification-form');
+    const welcomePage = document.getElementById('welcome-page');
+    const createAccountLink = document.getElementById('create-account-link');
+    const loginLink = document.getElementById('login-link');
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    const backToLoginBtn = document.getElementById('back-to-login');
+    const verificationLoginBtn = document.getElementById('verification-login-btn');
+    const verificationRetryBtn = document.getElementById('verification-retry-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const passwordToggles = document.querySelectorAll('.password-toggle');
+    const signupPassword = document.getElementById('signupPassword');
+    const newPassword = document.getElementById('new-password');
+    const confirmPassword = document.getElementById('confirm-password');
+    const signinForm = document.getElementById('signin-form');
+    const signupForm = document.getElementById('signup-form');
+    const forgotPwForm = document.getElementById('forgot-pw-form');
+    const resetPwForm = document.getElementById('reset-pw-form');
+    const toastContainer = document.getElementById('toast-container');
+
+    // API Base URL - Replace with your actual API URL
+    const API_BASE_URL = '/api/auth';  // This should be your actual API base URL
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check if there's a verification token in the URL
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+        const verificationToken = urlParams.get('token');
+        const resetToken = urlParams.get('reset_token');
 
-        if (token) {
-            // Check if this is a password reset link
-            if (window.location.pathname.includes('reset-password')) {
-                document.getElementById('reset-token').value = token;
-                showResetPassword();
+        if (verificationToken) {
+            showEmailVerification(verificationToken);
+        } else if (resetToken) {
+            showResetPasswordForm(resetToken);
+        } else {
+            // Check if user is already logged in
+            const authToken = sessionStorage.getItem('authToken');
+            const refreshToken = sessionStorage.getItem('refreshToken');
+
+            if (authToken && refreshToken) {
+                // User is logged in, show welcome page
+                showWelcomePage();
+            }
+        }
+    });
+
+    // Theme toggle
+    themeToggleBtn.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+    });
+
+    // Form navigation
+    createAccountLink.addEventListener('click', () => showForm(registerForm));
+    loginLink.addEventListener('click', () => showForm(loginForm));
+    forgotPasswordLink.addEventListener('click', () => showForm(forgotPasswordForm));
+    backToLoginBtn.addEventListener('click', () => showForm(loginForm));
+    verificationLoginBtn.addEventListener('click', () => showForm(loginForm));
+    verificationRetryBtn.addEventListener('click', () => showForm(loginForm));
+    logoutBtn.addEventListener('click', handleLogout);
+
+    // Password visibility toggle
+    passwordToggles.forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const passwordField = this.parentElement.querySelector('input');
+            const icon = this.querySelector('i');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
             } else {
-                // Assume it's an email verification token
-                verifyEmail(token);
+                passwordField.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
-        }
-
-        // Check for authenticated user
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (user && user.token) {
-            showDashboard(user);
-        }
+        });
     });
 
-    // Tab switching
-    document.getElementById('login-tab').addEventListener('click', showLogin);
-    document.getElementById('register-tab').addEventListener('click', showRegister);
+    // Password validation
+    signupPassword.addEventListener('input', () => validatePassword(signupPassword, {
+        lengthCheck: 'length-check',
+        lowercaseCheck: 'lowercase-check',
+        uppercaseCheck: 'uppercase-check',
+        digitCheck: 'digit-check',
+        specialCheck: 'special-check',
+        whitespaceCheck: 'whitespace-check'
+    }));
 
-    function showLogin() {
-        document.getElementById('login-form').classList.remove('hidden');
-        document.getElementById('register-form').classList.add('hidden');
-        document.getElementById('forgot-password-form').classList.add('hidden');
-        document.getElementById('reset-password-form').classList.add('hidden');
+    newPassword.addEventListener('input', () => validatePassword(newPassword, {
+        lengthCheck: 'reset-length-check',
+        lowercaseCheck: 'reset-lowercase-check',
+        uppercaseCheck: 'reset-uppercase-check',
+        digitCheck: 'reset-digit-check',
+        specialCheck: 'reset-special-check',
+        whitespaceCheck: 'reset-whitespace-check'
+    }));
 
-        document.getElementById('login-tab').classList.add('tab-active');
-        document.getElementById('login-tab').classList.remove('text-gray-500');
-        document.getElementById('register-tab').classList.remove('tab-active');
-        document.getElementById('register-tab').classList.add('text-gray-500');
+    // Form Submissions
+    signinForm.addEventListener('submit', handleLogin);
+    signupForm.addEventListener('submit', handleRegister);
+    forgotPwForm.addEventListener('submit', handleForgotPassword);
+    resetPwForm.addEventListener('submit', handleResetPassword);
+
+    // Functions
+    function showForm(formToShow) {
+        // Hide all forms
+        loginForm.classList.add('hidden');
+        registerForm.classList.add('hidden');
+        forgotPasswordForm.classList.add('hidden');
+        resetPasswordForm.classList.add('hidden');
+        emailVerificationForm.classList.add('hidden');
+        welcomePage.classList.add('hidden');
+
+        // Show the selected form
+        formToShow.classList.remove('hidden');
     }
 
-    function showRegister() {
-        document.getElementById('login-form').classList.add('hidden');
-        document.getElementById('register-form').classList.remove('hidden');
-        document.getElementById('forgot-password-form').classList.add('hidden');
-        document.getElementById('reset-password-form').classList.add('hidden');
+    function validatePassword(passwordInput, elementIds) {
+        const value = passwordInput.value;
 
-        document.getElementById('login-tab').classList.remove('tab-active');
-        document.getElementById('login-tab').classList.add('text-gray-500');
-        document.getElementById('register-tab').classList.add('tab-active');
-        document.getElementById('register-tab').classList.remove('text-gray-500');
+        // Validation checks
+        const isLengthValid = value.length >= 8;
+        const hasLowercase = /[a-z]/.test(value);
+        const hasUppercase = /[A-Z]/.test(value);
+        const hasDigit = /[0-9]/.test(value);
+        const hasSpecial = /[@#$%^&+=]/.test(value);
+        const hasNoWhitespace = !/\s/.test(value);
+
+        // Update classes
+        updateValidationClass(elementIds.lengthCheck, isLengthValid);
+        updateValidationClass(elementIds.lowercaseCheck, hasLowercase);
+        updateValidationClass(elementIds.uppercaseCheck, hasUppercase);
+        updateValidationClass(elementIds.digitCheck, hasDigit);
+        updateValidationClass(elementIds.specialCheck, hasSpecial);
+        updateValidationClass(elementIds.whitespaceCheck, hasNoWhitespace);
+
+        return isLengthValid && hasLowercase && hasUppercase && hasDigit && hasSpecial && hasNoWhitespace;
     }
 
-    function showForgotPassword() {
-        document.getElementById('login-form').classList.add('hidden');
-        document.getElementById('register-form').classList.add('hidden');
-        document.getElementById('forgot-password-form').classList.remove('hidden');
-        document.getElementById('reset-password-form').classList.add('hidden');
-
-        document.getElementById('login-tab').classList.remove('tab-active');
-        document.getElementById('login-tab').classList.add('text-gray-500');
-        document.getElementById('register-tab').classList.remove('tab-active');
-        document.getElementById('register-tab').classList.add('text-gray-500');
-    }
-
-    function showResetPassword() {
-        document.getElementById('login-form').classList.add('hidden');
-        document.getElementById('register-form').classList.add('hidden');
-        document.getElementById('forgot-password-form').classList.add('hidden');
-        document.getElementById('reset-password-form').classList.remove('hidden');
-
-        document.getElementById('login-tab').classList.remove('tab-active');
-        document.getElementById('login-tab').classList.add('text-gray-500');
-        document.getElementById('register-tab').classList.remove('tab-active');
-        document.getElementById('register-tab').classList.add('text-gray-500');
-    }
-
-    function showDashboard(user) {
-        const dashboardModal = document.getElementById('dashboard-modal');
-        const dashboardTitle = document.getElementById('dashboard-title');
-        const dashboardMessage = document.getElementById('dashboard-message');
-
-        // Determine user role
-        let role = 'User';
-        if (user.roles && user.roles.includes('ROLE_ADMIN')) {
-            role = 'Admin';
-        } else if (user.roles && user.roles.includes('ROLE_ORGANIZER')) {
-            role = 'Organizer';
-        }
-
-        dashboardTitle.textContent = `Welcome, ${user.username || user.email}`;
-        dashboardMessage.textContent = `You have successfully logged in as ${role}.`;
-
-        dashboardModal.classList.remove('hidden');
-    }
-
-    function togglePasswordVisibility(fieldId) {
-        const field = document.getElementById(fieldId);
-        const eye = document.getElementById(`${fieldId}-eye`);
-        const eyeSlash = document.getElementById(`${fieldId}-eye-slash`);
-
-        if (field.type === 'password') {
-            field.type = 'text';
-            if (eye) eye.classList.add('hidden');
-            if (eyeSlash) eyeSlash.classList.remove('hidden');
+    function updateValidationClass(elementId, isValid) {
+        const element = document.getElementById(elementId);
+        if (isValid) {
+            element.classList.remove('invalid');
+            element.classList.add('valid');
         } else {
-            field.type = 'password';
-            if (eye) eye.classList.remove('hidden');
-            if (eyeSlash) eyeSlash.classList.add('hidden');
+            element.classList.remove('valid');
+            element.classList.add('invalid');
         }
     }
 
-    function checkPasswordStrength(password, form = 'register') {
-        let strength = 0;
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast px-4 py-3 rounded-lg shadow-md ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white flex items-center`;
 
-        // Length check
-        if (password.length >= 8) strength++;
-        if (password.length >= 12) strength++;
+        let icon = 'fa-info-circle';
+        if (type === 'success') icon = 'fa-check-circle';
+        if (type === 'error') icon = 'fa-exclamation-circle';
 
-        // Complexity checks
-        if (/[A-Z]/.test(password)) strength++;
-        if (/[0-9]/.test(password)) strength++;
-        if (/[^A-Za-z0-9]/.test(password)) strength++;
+        toast.innerHTML = `
+                <i class="fas ${icon} mr-2"></i>
+                <span>${message}</span>
+            `;
 
-        // Cap at 4 for our meter
-        strength = Math.min(strength, 4);
+        toastContainer.appendChild(toast);
 
-        if (form === 'reset') {
-            document.getElementById('reset-strength').className = `password-strength strength-${strength} mb-1 rounded-full`;
-        } else {
-            document.querySelector('.password-strength').className = `password-strength strength-${strength} mb-1 rounded-full`;
-        }
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
     }
 
-    // Form submissions
-    document.getElementById('signin-form').addEventListener('submit', function(e) {
+    async function handleLogin(e) {
         e.preventDefault();
 
-        const btnText = document.getElementById('login-btn-text');
-        const spinner = document.getElementById('login-spinner');
-        const errorDiv = document.getElementById('login-error');
+        const usernameOrEmail = document.getElementById('usernameOrEmail').value;
+        const password = document.getElementById('password').value;
+        const loginBtnText = document.getElementById('login-btn-text');
+        const loginSpinner = document.getElementById('login-spinner');
 
-        btnText.textContent = 'Signing In...';
-        spinner.classList.remove('hidden');
+        // Clear previous errors
+        document.getElementById('usernameOrEmail-error').classList.add('hidden');
+        document.getElementById('password-error').classList.add('hidden');
 
-        const formData = {
-            usernameOrEmail: document.getElementById('login-identifier').value,
-            password: document.getElementById('login-password').value
-        };
-
-        fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Store user data and token
-                localStorage.setItem('user', JSON.stringify(data));
-                showDashboard(data);
-            })
-            .catch(error => {
-                errorDiv.textContent = error.message || 'Invalid credentials. Please try again.';
-                errorDiv.classList.remove('hidden');
-            })
-            .finally(() => {
-                btnText.textContent = 'Sign In';
-                spinner.classList.add('hidden');
-            });
-    });
-
-    document.getElementById('signup-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const btnText = document.getElementById('register-btn-text');
-        const spinner = document.getElementById('register-spinner');
-        const errorDiv = document.getElementById('register-error');
-        const successDiv = document.getElementById('register-success');
-
-        btnText.textContent = 'Creating Account...';
-        spinner.classList.remove('hidden');
-        errorDiv.classList.add('hidden');
-
-        const formData = {
-            firstName: document.getElementById('first-name').value,
-            lastName: document.getElementById('last-name').value,
-            username: document.getElementById('username').value,
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value,
-            phoneNumber: document.getElementById('phone').value,
-            address: document.getElementById('address').value,
-            city: document.getElementById('city').value,
-            state: document.getElementById('state').value,
-            country: document.getElementById('country').value
-        };
-
-        fetch('/api/auth/signup', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                successDiv.textContent = data.message || 'Account created successfully! Please check your email to verify your account.';
-                successDiv.classList.remove('hidden');
-                // Clear form
-                document.getElementById('signup-form').reset();
-                document.querySelector('.password-strength').className = 'password-strength strength-0 mb-1 rounded-full';
-            })
-            .catch(error => {
-                errorDiv.textContent = error.message || 'An error occurred during registration. Please try again.';
-                errorDiv.classList.remove('hidden');
-            })
-            .finally(() => {
-                btnText.textContent = 'Sign Up';
-                spinner.classList.add('hidden');
-            });
-    });
-
-    document.getElementById('forgot-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const btnText = document.getElementById('forgot-btn-text');
-        const spinner = document.getElementById('forgot-spinner');
-        const errorDiv = document.getElementById('forgot-error');
-        const successDiv = document.getElementById('forgot-success');
-
-        btnText.textContent = 'Sending...';
-        spinner.classList.remove('hidden');
-        errorDiv.classList.add('hidden');
-
-        const email = document.getElementById('forgot-email').value;
-
-        fetch(`/api/auth/forgot-password?email=${encodeURIComponent(email)}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                successDiv.textContent = data.message || 'Password reset link sent to your email. Please check your inbox.';
-                successDiv.classList.remove('hidden');
-                document.getElementById('forgot-form').reset();
-            })
-            .catch(error => {
-                errorDiv.textContent = error.message || 'An error occurred. Please try again.';
-                errorDiv.classList.remove('hidden');
-            })
-            .finally(() => {
-                btnText.textContent = 'Send Reset Link';
-                spinner.classList.add('hidden');
-            });
-    });
-
-    document.getElementById('reset-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const btnText = document.getElementById('reset-btn-text');
-        const spinner = document.getElementById('reset-pw-spinner');
-        const errorDiv = document.getElementById('reset-error');
-        const successDiv = document.getElementById('reset-success');
-
-        btnText.textContent = 'Resetting...';
-        spinner.classList.remove('hidden');
-        errorDiv.classList.add('hidden');
-
-        const formData = {
-            token: document.getElementById('reset-token').value,
-            newPassword: document.getElementById('new-password').value,
-            confirmPassword: document.getElementById('confirm-password').value
-        };
-
-        // Simple client-side validation
-        if (formData.newPassword !== formData.confirmPassword) {
-            errorDiv.textContent = 'Passwords do not match.';
-            errorDiv.classList.remove('hidden');
-            btnText.textContent = 'Reset Password';
-            spinner.classList.add('hidden');
+        // Simple validation
+        if (!usernameOrEmail) {
+            document.getElementById('usernameOrEmail-error').textContent = 'Username or email is required';
+            document.getElementById('usernameOrEmail-error').classList.remove('hidden');
             return;
         }
 
-        fetch('/api/auth/reset-password', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                successDiv.textContent = data.message || 'Password reset successfully! You can now login with your new password.';
-                successDiv.classList.remove('hidden');
-                document.getElementById('reset-form').reset();
-                document.getElementById('reset-strength').className = 'password-strength strength-0 mb-1 rounded-full';
+        if (!password) {
+            document.getElementById('password-error').textContent = 'Password is required';
+            document.getElementById('password-error').classList.remove('hidden');
+            return;
+        }
 
-                // Redirect to login after 3 seconds
-                setTimeout(() => {
-                    showLogin();
-                    successDiv.classList.add('hidden');
-                }, 3000);
-            })
-            .catch(error => {
-                errorDiv.textContent = error.message || 'An error occurred. Please try again.';
-                errorDiv.classList.remove('hidden');
-            })
-            .finally(() => {
-                btnText.textContent = 'Reset Password';
-                spinner.classList.add('hidden');
+        // Show loading state
+        loginBtnText.textContent = 'Signing In...';
+        loginSpinner.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    usernameOrEmail,
+                    password
+                })
             });
-    });
 
-    function verifyEmail(token) {
-        fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Login failed');
             }
-        })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw err; });
-                }
-                return response.json();
-            })
-            .then(data => {
-                alert(data.message || 'Email verified successfully! You can now login.');
-                showLogin();
-            })
-            .catch(error => {
-                alert(error.message || 'Email verification failed. The link may be invalid or expired.');
-                showLogin();
-            });
+
+            // Store authentication data
+            sessionStorage.setItem('authToken', data.token);
+            sessionStorage.setItem('refreshToken', data.refreshToken);
+            sessionStorage.setItem('userId', data.id);
+            sessionStorage.setItem('username', data.username);
+            sessionStorage.setItem('email', data.email);
+            sessionStorage.setItem('roles', JSON.stringify(data.roles));
+
+            // Show welcome page
+            showWelcomePage();
+            showToast('Successfully logged in!', 'success');
+
+        } catch (error) {
+            showToast(error.message || 'Failed to login. Please check your credentials.', 'error');
+            console.error('Login error:', error);
+        } finally {
+            // Reset button state
+            loginBtnText.textContent = 'Sign In';
+            loginSpinner.classList.add('hidden');
+        }
     }
 
-    function logout() {
-        localStorage.removeItem('user');
-        document.getElementById('dashboard-modal').classList.add('hidden');
-        showLogin();
+    async function handleRegister(e) {
+        e.preventDefault();
+
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('signupPassword').value;
+        const phoneNumber = document.getElementById('phoneNumber').value;
+        const address = document.getElementById('address').value;
+        const city = document.getElementById('city').value;
+        const state = document.getElementById('state').value;
+        const country = document.getElementById('country').value;
+        const termsAccepted = document.getElementById('terms').checked;
+        const registerBtnText = document.getElementById('register-btn-text');
+        const registerSpinner = document.getElementById('register-spinner');
+
+        // Clear previous errors
+        document.querySelectorAll('[id$="-error"]').forEach(el => el.classList.add('hidden'));
+
+        // Validations
+        let hasError = false;
+
+        if (!firstName || firstName.length < 2) {
+            document.getElementById('firstName-error').textContent = 'First name must be at least 2 characters';
+            document.getElementById('firstName-error').classList.remove('hidden');
+            hasError = true;
+        }
+
+        if (!lastName || lastName.length < 2) {
+            document.getElementById('lastName-error').textContent = 'Last name must be at least 2 characters';
+            document.getElementById('lastName-error').classList.remove('hidden');
+            hasError = true;
+        }
+
+        if (!username || username.length < 3) {
+            document.getElementById('username-error').textContent = 'Username must be at least 3 characters';
+            document.getElementById('username-error').classList.remove('hidden');
+            hasError = true;
+        }
+
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+            document.getElementById('email-error').textContent = 'Please enter a valid email address';
+            document.getElementById('email-error').classList.remove('hidden');
+            hasError = true;
+        }
+
+        if (!phoneNumber || !/^\+?[0-9]{10,15}$/.test(phoneNumber)) {
+            document.getElementById('phoneNumber-error').textContent = 'Please enter a valid phone number (10-15 digits)';
+            document.getElementById('phoneNumber-error').classList.remove('hidden');
+            hasError = true;
+        }
+
+        // Password validation
+        const isPasswordValid = validatePassword(signupPassword, {
+            lengthCheck: 'length-check',
+            lowercaseCheck: 'lowercase-check',
+            uppercaseCheck: 'uppercase-check',
+            digitCheck: 'digit-check',
+            specialCheck: 'special-check',
+            whitespaceCheck: 'whitespace-check'
+        });
+
+        if (!isPasswordValid) {
+            document.getElementById('signupPassword-error').textContent = 'Password does not meet requirements';
+            document.getElementById('signupPassword-error').classList.remove('hidden');
+            hasError = true;
+        }
+
+        if (!termsAccepted) {
+            hasError = true;
+            showToast('Please accept the Terms and Conditions', 'error');
+        }
+
+        if (hasError) {
+            return;
+        }
+
+        // Show loading state
+        registerBtnText.textContent = 'Creating Account...';
+        registerSpinner.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/signup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firstName,
+                    lastName,
+                    username,
+                    email,
+                    password,
+                    phoneNumber,
+                    address,
+                    city,
+                    state,
+                    country
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Registration failed');
+            }
+
+            // Clear the form
+            signupForm.reset();
+
+            // Show success message and redirect to login
+            showToast('Account created successfully! Please check your email to verify your account.', 'success');
+            setTimeout(() => {
+                showForm(loginForm);
+            }, 2000);
+
+        } catch (error) {
+            showToast(error.message || 'Failed to create account', 'error');
+            console.error('Registration error:', error);
+        } finally {
+            // Reset button state
+            registerBtnText.textContent = 'Create Account';
+            registerSpinner.classList.add('hidden');
+        }
+    }
+
+    async function handleForgotPassword(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('forgot-email').value;
+        const forgotBtnText = document.getElementById('forgot-btn-text');
+        const forgotSpinner = document.getElementById('forgot-spinner');
+
+        // Clear previous errors
+        document.getElementById('forgot-email-error').classList.add('hidden');
+
+        // Validate email
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+            document.getElementById('forgot-email-error').textContent = 'Please enter a valid email address';
+            document.getElementById('forgot-email-error').classList.remove('hidden');
+            return;
+        }
+
+        // Show loading state
+        forgotBtnText.textContent = 'Sending...';
+        forgotSpinner.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/forgot-password?email=${encodeURIComponent(email)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to send reset link');
+            }
+
+            // Show success message
+            showToast('Password reset link sent to your email!', 'success');
+
+            // Clear the form and redirect to login
+            forgotPwForm.reset();
+            setTimeout(() => {
+                showForm(loginForm);
+            }, 2000);
+
+        } catch (error) {
+            showToast(error.message || 'Failed to send reset link', 'error');
+            console.error('Forgot password error:', error);
+        } finally {
+            // Reset button state
+            forgotBtnText.textContent = 'Send Reset Link';
+            forgotSpinner.classList.add('hidden');
+        }
+    }
+
+    async function handleResetPassword(e) {
+        e.preventDefault();
+
+        const token = document.getElementById('reset-token').value;
+        const newPasswordValue = document.getElementById('new-password').value;
+        const confirmPasswordValue = document.getElementById('confirm-password').value;
+        const resetBtnText = document.getElementById('reset-btn-text');
+        const resetSpinner = document.getElementById('reset-spinner');
+
+        // Clear previous errors
+        document.getElementById('new-password-error').classList.add('hidden');
+        document.getElementById('confirm-password-error').classList.add('hidden');
+
+        // Validate password
+        const isPasswordValid = validatePassword(newPassword, {
+            lengthCheck: 'reset-length-check',
+            lowercaseCheck: 'reset-lowercase-check',
+            uppercaseCheck: 'reset-uppercase-check',
+            digitCheck: 'reset-digit-check',
+            specialCheck: 'reset-special-check',
+            whitespaceCheck: 'reset-whitespace-check'
+        });
+
+        if (!isPasswordValid) {
+            document.getElementById('new-password-error').textContent = 'Password does not meet requirements';
+            document.getElementById('new-password-error').classList.remove('hidden');
+            return;
+        }
+
+        // Confirm passwords match
+        if (newPasswordValue !== confirmPasswordValue) {
+            document.getElementById('confirm-password-error').textContent = 'Passwords do not match';
+            document.getElementById('confirm-password-error').classList.remove('hidden');
+            return;
+        }
+
+        // Show loading state
+        resetBtnText.textContent = 'Resetting...';
+        resetSpinner.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/reset-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    token,
+                    newPassword: newPasswordValue,
+                    confirmPassword: confirmPasswordValue
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to reset password');
+            }
+
+            // Show success message
+            showToast('Password reset successful!', 'success');
+
+            // Clear the form and redirect to login
+            resetPwForm.reset();
+            setTimeout(() => {
+                showForm(loginForm);
+            }, 2000);
+
+        } catch (error) {
+            showToast(error.message || 'Failed to reset password', 'error');
+            console.error('Reset password error:', error);
+        } finally {
+            // Reset button state
+            resetBtnText.textContent = 'Reset Password';
+            resetSpinner.classList.add('hidden');
+        }
+    }
+
+    async function showEmailVerification(token) {
+        showForm(emailVerificationForm);
+
+        const verificationLoading = document.getElementById('verification-loading');
+        const verificationSuccess = document.getElementById('verification-success');
+        const verificationError = document.getElementById('verification-error');
+        const verificationErrorMessage = document.getElementById('verification-error-message');
+
+        verificationLoading.classList.remove('hidden');
+        verificationSuccess.classList.add('hidden');
+        verificationError.classList.add('hidden');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/verify-email?token=${encodeURIComponent(token)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            verificationLoading.classList.add('hidden');
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Email verification failed');
+            }
+
+            // Show success state
+            verificationSuccess.classList.remove('hidden');
+
+        } catch (error) {
+            verificationLoading.classList.add('hidden');
+            verificationError.classList.remove('hidden');
+            verificationErrorMessage.textContent = error.message || 'Unable to verify your email. The link may have expired or is invalid.';
+            console.error('Email verification error:', error);
+        }
+    }
+
+    function showResetPasswordForm(token) {
+        // Set the token in the hidden field
+        document.getElementById('reset-token').value = token;
+
+        // Show the reset password form
+        showForm(resetPasswordForm);
+    }
+
+    function showWelcomePage() {
+        const welcomeTitle = document.getElementById('welcome-title');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const welcomeIcon = document.getElementById('welcome-icon');
+        const infoUsername = document.getElementById('info-username');
+        const infoEmail = document.getElementById('info-email');
+        const infoRoles = document.getElementById('info-roles');
+
+        // Get user data from session storage
+        const username = sessionStorage.getItem('username') || '-';
+        const email = sessionStorage.getItem('email') || '-';
+        const rolesStr = sessionStorage.getItem('roles');
+        const roles = rolesStr ? JSON.parse(rolesStr) : [];
+
+        // Set user info
+        infoUsername.textContent = username;
+        infoEmail.textContent = email;
+        infoRoles.textContent = roles.join(', ') || '-';
+
+        // Customize welcome message based on role
+        const isAdmin = roles.includes('ADMIN');
+        const isOrganizer = roles.includes('ORGANIZER');
+
+        if (isAdmin) {
+            welcomeTitle.textContent = 'Welcome, Admin!';
+            welcomeMessage.textContent = 'You have access to the administrative dashboard.';
+            welcomeIcon.className = 'fas fa-user-shield text-2xl text-primary dark:text-primary-light';
+        } else if (isOrganizer) {
+            welcomeTitle.textContent = 'Welcome, Organizer!';
+            welcomeMessage.textContent = 'You can now create and manage events.';
+            welcomeIcon.className = 'fas fa-calendar-alt text-2xl text-primary dark:text-primary-light';
+        } else {
+            welcomeTitle.textContent = `Welcome, ${username}!`;
+            welcomeMessage.textContent = 'You can now explore and register for events.';
+            welcomeIcon.className = 'fas fa-user text-2xl text-primary dark:text-primary-light';
+        }
+
+        // Show the welcome page
+        showForm(welcomePage);
+    }
+
+    function handleLogout() {
+        // Clear session storage
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('userId');
+        sessionStorage.removeItem('username');
+        sessionStorage.removeItem('email');
+        sessionStorage.removeItem('roles');
+
+        // Show login form
+        showForm(loginForm);
+
+        // Show toast message
+        showToast('Successfully logged out', 'success');
+    }
+
+    // Helper function to refresh the auth token
+    async function refreshAuthToken() {
+        const refreshToken = sessionStorage.getItem('refreshToken');
+
+        if (!refreshToken) {
+            // No refresh token, user needs to login again
+            handleLogout();
+            return null;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/refresh-token?refreshTokenRequest=${encodeURIComponent(refreshToken)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Token refresh failed');
+            }
+
+            // Update tokens in session storage
+            sessionStorage.setItem('authToken', data.token);
+            sessionStorage.setItem('refreshToken', data.refreshToken);
+
+            return data.token;
+
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            // If token refresh fails, log the user out
+            handleLogout();
+            showToast('Your session has expired. Please login again.', 'error');
+            return null;
+        }
     }
 </script>
 </body>

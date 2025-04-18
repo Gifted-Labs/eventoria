@@ -4,7 +4,7 @@ import com.giftedlabs.eventoria.authentication.dto.*;
 import com.giftedlabs.eventoria.enums.UserRole;
 import com.giftedlabs.eventoria.exception.InvalidTokenException;
 import com.giftedlabs.eventoria.exception.TokenExpiredException;
-import com.giftedlabs.eventoria.jwt.JwtService;
+import com.giftedlabs.eventoria.authentication.jwt.JwtService;
 import com.giftedlabs.eventoria.users.User;
 import com.giftedlabs.eventoria.users.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -63,7 +63,7 @@ public class AuthenticationService {
                 state(signUpRequest.state()).
                 country(signUpRequest.country()).
                 createdAt(LocalDateTime.now()).
-                role(UserRole.ROLE_ADMIN).
+                role(UserRole.ROLE_ATTENDEE).
                 isEnabled(false).
                 build();
 

@@ -1,8 +1,8 @@
-package com.giftedlabs.eventoria.security;
+package com.giftedlabs.eventoria.config.security;
 
 import com.giftedlabs.eventoria.authentication.service.impl.UserDetailsServiceImpl;
-import com.giftedlabs.eventoria.jwt.JwtAuthenticationEntryPoint;
-import com.giftedlabs.eventoria.jwt.JwtAuthenticationFilter;
+import com.giftedlabs.eventoria.authentication.jwt.JwtAuthenticationEntryPoint;
+import com.giftedlabs.eventoria.authentication.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,7 +46,9 @@ public class WebSecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/error"
+                                "/error",
+                                "/logout",
+                                "/signout"
                         ).permitAll()
                         .requestMatchers("/", "/index.html","/index.html/api/auth/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

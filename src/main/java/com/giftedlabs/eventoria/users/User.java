@@ -31,6 +31,7 @@ public class User {
     private String password;
     @NaturalId(mutable = false)
     private String phoneNumber;
+    @Enumerated(EnumType.ORDINAL)
     private UserRole role;
     private String address;
     private String city;

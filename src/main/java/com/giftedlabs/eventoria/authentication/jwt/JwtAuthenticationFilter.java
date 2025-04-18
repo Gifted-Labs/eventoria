@@ -1,8 +1,7 @@
-package com.giftedlabs.eventoria.jwt;
+package com.giftedlabs.eventoria.authentication.jwt;
 
 import com.giftedlabs.eventoria.authentication.service.impl.UserDetailsImpl;
 import com.giftedlabs.eventoria.authentication.service.impl.UserDetailsServiceImpl;
-import com.giftedlabs.eventoria.users.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

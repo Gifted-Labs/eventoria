@@ -1,4 +1,4 @@
-package com.giftedlabs.eventoria.jwt;
+package com.giftedlabs.eventoria.authentication.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;

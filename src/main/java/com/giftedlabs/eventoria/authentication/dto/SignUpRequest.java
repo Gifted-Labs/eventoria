@@ -35,7 +35,10 @@ public record SignUpRequest(
         String country
 ) {
 
-
+        @Override
+        public String toString() {
+                return "";
+        }
 
 
 }

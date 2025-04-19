@@ -15,14 +15,14 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EvenResponse {
+public class EventResponse {
 
     private Long id;
     private String name;
     private String description;
     private VenueResponse venue;
     private Category category;
-    private imageUrl;
+    private String imageUrl;
     private LocalDate startDate;
     private LocalTime startTime;
     private LocalDate endDate;

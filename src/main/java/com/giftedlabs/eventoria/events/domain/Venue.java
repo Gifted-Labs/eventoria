@@ -89,4 +89,8 @@ public class Venue {
      * can assist in auto-fill features by ranking venues based on how frequently they are used.
      */
     private Integer capacity;
+
+    private boolean isVirtual;
+    private String virtualMeetingUrl;
+    private String virtualMeetingPassword;
 }

@@ -2,9 +2,8 @@ package com.giftedlabs.eventoria.events.domain;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.giftedlabs.eventoria.enums.Category;
-import com.giftedlabs.eventoria.enums.EventState;
+import com.giftedlabs.eventoria.enums.EventStatus;
 import com.giftedlabs.eventoria.users.Organizer;
-import jakarta.annotation.PostConstruct;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,6 +11,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -59,38 +60,32 @@ public class Event {
     @JsonBackReference
     private Organizer organizer;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
-    private EventState eventState;
+    private EventStatus eventStatus;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Registration> participants = new ArrayList<>();
 
     // Helper methods for display of date
     public LocalDate getDate(LocalDateTime dateTime){
-        if (dateTime != null) {
-            return dateTime.toLocalDate();
-        }
-        return null;
+        return dateTime != null ? dateTime.toLocalDate() : null;
     }
 
     // Helper methods for display of time
     public LocalTime getTime(LocalDateTime dateTime){
-        if (dateTime != null) {
-            return dateTime.toLocalTime();
-        }
-        return null;
+        return dateTime != null ? dateTime.toLocalTime() : null;
     }
 
 
     @PrePersist
     private void prePersist() {
-        this.createdAt = LocalDateTime.now();
         this.isTicketed = false;
         this.isFeatured = false;
-        this.updatedAt = LocalDateTime.now();
     }
 }

@@ -1,6 +1,6 @@
 package com.giftedlabs.eventoria.enums;
 
-public enum EventState {
+public enum EventStatus {
     PENDING, PUBLISHED, CANCELLED, EXPIRED, BLOCKED, DELETED
 
 

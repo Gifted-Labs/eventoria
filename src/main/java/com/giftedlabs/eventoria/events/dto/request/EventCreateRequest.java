@@ -1,5 +1,6 @@
 package com.giftedlabs.eventoria.events.dto.request;
 
+import com.giftedlabs.eventoria.enums.Category;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
@@ -25,6 +26,9 @@ public class EventCreateRequest {
     @Size(max = 5000, message = "Event description cannot exceed 5000 characteds")
     private String description;
 
+    @NotBlank(message = "Event category is required")
+    private Category category;
+
     @Valid
     @NotNull(message = "Venue information is required")
     private VenueRequest venue;
@@ -34,7 +38,7 @@ public class EventCreateRequest {
 
     @NotNull(message = "Event start date is required")
     @Future(message = "Event start date must be in the future")
-    private LocalDateTime startData;
+    private LocalDateTime startDate;
 
     private LocalDateTime endDate;
 

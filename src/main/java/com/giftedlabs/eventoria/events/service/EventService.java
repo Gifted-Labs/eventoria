@@ -10,6 +10,7 @@ import com.giftedlabs.eventoria.events.dto.EventUpdateRequestDTO;
 import com.giftedlabs.eventoria.events.dto.request.EventCreateRequest;
 import com.giftedlabs.eventoria.events.dto.response.EventDetailResponse;
 import com.giftedlabs.eventoria.events.dto.response.EventSummaryResponse;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -29,7 +30,7 @@ public interface EventService {
 
     Event updateEvent(Long eventId, EventUpdateRequestDTO eventDTO, Long organizerId);
 
-    EventDetailResponse getEventById(Long eventId);
+    Event getEventById(Long eventId);
 
     Optional<Event> findEventById(Long eventId);
 

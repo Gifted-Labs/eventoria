@@ -35,32 +35,6 @@ public class EventResponse {
     private EventStatus eventStatus;
     private int registrationCount;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class VenueResponse {
-        private String name;
-        private String address;
-        private String city;
-        private String state;
-        private String country;
-        private String zipCode;
-        private Double latitude;
-        private Double longitude;
-        private Integer capacity;
-        private boolean isVirtual;
-        private String virtualMeetingUrl;
-    }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class OrganizerResponse {
-        private Long id;
-        private String name;
-        private String email;
-        private String website;
-    }
+
 }

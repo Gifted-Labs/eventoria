@@ -59,7 +59,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class Venue {
 
 

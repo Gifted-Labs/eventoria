@@ -28,17 +28,13 @@ public class EventDetailResponse {
     private LocalTime startTime;
     private LocalDate endDate;
     private LocalTime endTime;
-    private VenueDTO venue;
+    private VenueResponse venue;
     private String imageUrl;
     private Category category;
-    private EventStatus status;
-    private Boolean ticketed;
-    private Boolean featured;
-    private Long organizerId;
-    private String organizerName;
-    private String organizerEmail;
-    private String organizerPhone;
-    private String websiteUrl;
+    private EventStatus eventStatus;
+    private Boolean isTicketed;
+    private Boolean isFeatured;
+    private OrganizerResponse organizer;
     private List<String> tags;
     private Boolean privateEvent;
     private LocalDateTime createdAt;
@@ -46,6 +42,7 @@ public class EventDetailResponse {
 
     // Additional detailed information
     private Boolean isRegistrationOpen;
+    private Integer registrationCount;
     private Integer remainingCapacity;
     private Double attendanceRate;
     private String eventAccessCode;
@@ -56,4 +53,5 @@ public class EventDetailResponse {
     private List<Map<String, Object>> speakers;
     private List<Map<String, Object>> sponsors;
     private Map<String, String> additionalProperties;
+
 }

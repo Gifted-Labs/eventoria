@@ -1,8 +1,22 @@
 package com.giftedlabs.eventoria.enums;
 
-public enum EventStatus {
-    PENDING, PUBLISHED, CANCELLED, EXPIRED, BLOCKED, DELETED
+import lombok.Getter;
 
+@Getter
+public enum EventStatus {
+    DRAFT("Draft"),
+    PUBLISHED("Published"),
+    CANCELLED("Cancelled"),
+    POSTPONED("Postponed"),
+    COMPLETED("Completed"),
+    ARCHIVED("Archived");
+
+
+    private final String displayName;
+
+    EventStatus (String displayName){
+        this.displayName = displayName;
+    }
 
     // PENDING: The event is created but not yet published.
     // PUBLISHED: The event is live and visible to users.

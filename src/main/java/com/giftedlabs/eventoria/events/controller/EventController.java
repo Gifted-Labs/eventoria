@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -22,6 +23,7 @@ public class EventController {
     private final EventService eventService;
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<EventDetailResponse> getEventById(@PathVariable Long id){
         log.info("REST request to get event by id: {}", id);
         EventDetailResponse eventDetailResponse = eventService.findEventById(id);
@@ -43,6 +45,8 @@ public class EventController {
         Page<EventDetailResponse> eventDetailResponse = eventService.getAllEvents(page, size);
         return ResponseEntity.ok(eventDetailResponse);
     }
+
+
 
 
 }

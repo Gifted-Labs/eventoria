@@ -11,6 +11,7 @@ import com.giftedlabs.eventoria.events.dto.response.EventDetailResponse;
 import com.giftedlabs.eventoria.events.dto.response.EventSummaryResponse;
 import com.giftedlabs.eventoria.events.mappers.EventMapper;
 import com.giftedlabs.eventoria.events.repository.EventRepository;
+import com.giftedlabs.eventoria.events.repository.EventSpecification;
 import com.giftedlabs.eventoria.events.service.EventService;
 import com.giftedlabs.eventoria.exception.UserNotFoundException;
 import com.giftedlabs.eventoria.exception.events.EventNotFoundException;
@@ -28,6 +29,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -343,6 +345,12 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Page<Event> searchEvents(EventSearchRequestDTO searchRequest, Pageable pageable) {
+        log.info("Searching events with criteria: {}", searchRequest);
+
+        Specification<Event> specification = EventSpecification.withDynamicQuery(
+                searchRequest
+        )
+
         return null;
     }
 

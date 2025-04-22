@@ -36,22 +36,6 @@ public class EventUpdateRequest {
 
     private Boolean isTicketed;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class VenueRequest {
-        private String name;
-        private String address;
-        private String city;
-        private String state;
-        private String country;
-        private String zipCode;
-        private Double latitude;
-        private Double longitude;
-        private Integer capacity;
-        private Boolean isVirtual;
-        private String virtualMeetingUrl;
-        private String virtualMeetingPassword;
-    }
+    private Boolean isFeatured;
+
 }

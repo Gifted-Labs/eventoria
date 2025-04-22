@@ -3,6 +3,7 @@ package com.giftedlabs.eventoria.config.security;
 import com.giftedlabs.eventoria.authentication.service.impl.UserDetailsServiceImpl;
 import com.giftedlabs.eventoria.authentication.jwt.JwtAuthenticationEntryPoint;
 import com.giftedlabs.eventoria.authentication.jwt.JwtAuthenticationFilter;
+import com.giftedlabs.eventoria.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,9 +51,10 @@ public class WebSecurityConfig {
                                 "/logout",
                                 "/signout"
                         ).permitAll()
+                        .requestMatchers("api/events/**").permitAll()
                         .requestMatchers("/", "/index.html","/index.html/api/auth/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+                        .anyRequest().fullyAuthenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

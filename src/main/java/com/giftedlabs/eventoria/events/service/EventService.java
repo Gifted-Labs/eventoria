@@ -4,20 +4,17 @@ package com.giftedlabs.eventoria.events.service;
 import com.giftedlabs.eventoria.enums.Category;
 import com.giftedlabs.eventoria.enums.EventStatus;
 import com.giftedlabs.eventoria.events.domain.Event;
-import com.giftedlabs.eventoria.events.dto.EventCreateRequestDTO;
 import com.giftedlabs.eventoria.events.dto.EventSearchRequestDTO;
-import com.giftedlabs.eventoria.events.dto.EventUpdateRequestDTO;
-import com.giftedlabs.eventoria.events.dto.request.EventCreateRequest;
+import com.giftedlabs.eventoria.events.dto.request.EventCreateRequestDTO;
+import com.giftedlabs.eventoria.events.dto.request.EventUpdateRequest;
 import com.giftedlabs.eventoria.events.dto.response.EventDetailResponse;
 import com.giftedlabs.eventoria.events.dto.response.EventSummaryResponse;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  *  Event Service
@@ -28,11 +25,13 @@ public interface EventService {
     // CRUD Operations
     Event createEvent(EventCreateRequestDTO eventDTO, Long organizerId);
 
-    Event updateEvent(Long eventId, EventUpdateRequestDTO eventDTO, Long organizerId);
+    Event updateEvent(Long eventId, EventUpdateRequest eventDTO, Long organizerId);
 
     Event getEventById(Long eventId);
 
-    Optional<Event> findEventById(Long eventId);
+    Page<EventDetailResponse> getAllEvents(int page, int size);
+
+    EventDetailResponse findEventById(Long eventId);
 
     void deleteEvent(Long eventId, Long organizerId);
 

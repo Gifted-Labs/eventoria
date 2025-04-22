@@ -2,8 +2,8 @@ package com.giftedlabs.eventoria.utils;
 
 import com.giftedlabs.eventoria.enums.EventStatus;
 import com.giftedlabs.eventoria.events.domain.Event;
-import com.giftedlabs.eventoria.events.dto.EventCreateRequestDTO;
-import com.giftedlabs.eventoria.events.dto.EventUpdateRequestDTO;
+import com.giftedlabs.eventoria.events.dto.request.EventCreateRequestDTO;
+import com.giftedlabs.eventoria.events.dto.request.EventUpdateRequest;
 import com.giftedlabs.eventoria.exception.events.EventValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ public class EventValidationUtil {
      */
 
     public void validateEventCreations(EventCreateRequestDTO eventDTO){
-        log.debug("Validatoin event creation request");
+        log.debug("Validation event creation request");
 
         // Check required fields
         if(eventDTO.getName() == null || eventDTO.getName().isBlank()) {
@@ -69,7 +69,7 @@ public class EventValidationUtil {
      * @param eventDTO The update request
      * @throws EventValidationException if validation fails
      */
-    public void validateEventUpdate(Event existingEvent, EventUpdateRequestDTO eventDTO) {
+    public void validateEventUpdate(Event existingEvent, EventUpdateRequest eventDTO) {
         log.debug("Validating event update request for event {}", existingEvent.getId());
 
         // Check that the event is not in a state that prevents updates
@@ -97,15 +97,14 @@ public class EventValidationUtil {
         }
 
         // Check ticket price if updating for a ticketed event
-        if ((existingEvent.isTicketed() || Boolean.TRUE.equals(eventDTO.getTicketed())) &&
+
+        /**
+         * if ((existingEvent.isTicketed() || Boolean.TRUE.equals(eventDTO.getIsTicketed())) &&
                 eventDTO.getTicketPrice() != null && eventDTO.getTicketPrice() < 0) {
             throw new EventValidationException("Ticket price must be non-negative");
         }
+        */
 
-        // Validate max attendees if updating
-        if (eventDTO.getMaxAttendees() != null && eventDTO.getMaxAttendees() <= 0) {
-            throw new EventValidationException("Maximum attendees must be greater than zero");
-        }
 
         // Validate venue capacity if updating
         if (eventDTO.getVenue() != null && eventDTO.getVenue().getCapacity() != null &&
@@ -114,10 +113,6 @@ public class EventValidationUtil {
         }
 
         // Check that we're not reducing capacity below current registrations
-        if (eventDTO.getMaxAttendees() != null &&
-                eventDTO.getMaxAttendees() < existingEvent.getParticipants().size()) {
-            throw new EventValidationException("Cannot reduce max attendees below current registration count");
-        }
 
         log.debug("Event update request validation passed for event {}", existingEvent.getId());
     }

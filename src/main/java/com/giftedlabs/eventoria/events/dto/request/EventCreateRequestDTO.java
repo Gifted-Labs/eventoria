@@ -1,6 +1,7 @@
 package com.giftedlabs.eventoria.events.dto.request;
 
 import com.giftedlabs.eventoria.enums.Category;
+import com.giftedlabs.eventoria.enums.EventStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EventCreateRequest {
+public class EventCreateRequestDTO {
 
     @NotBlank(message = "Event name is required")
     @Size(max = 255, message ="Event name cannot exceed 255 characters")
@@ -26,8 +27,9 @@ public class EventCreateRequest {
     @Size(max = 5000, message = "Event description cannot exceed 5000 characteds")
     private String description;
 
-    @NotBlank(message = "Event category is required")
     private Category category;
+
+    private EventStatus eventStatus = EventStatus.DRAFT;
 
     @Valid
     @NotNull(message = "Venue information is required")
@@ -44,38 +46,4 @@ public class EventCreateRequest {
 
     private boolean isTicketed;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static  class  VenueRequest {
-
-        @NotBlank(message = "Venue name is required")
-        private String name;
-
-        @NotBlank(message = "Venue address is required")
-        private String address;
-
-        @NotBlank(message = "City is required")
-        private String city;
-
-        private String state;
-
-        @NotBlank(message = "Country is required")
-        private String country;
-
-        private String sipCode;
-
-        private Double latitude;
-
-        private Double longitude;
-
-        private Integer capacity;
-
-        private boolean isVirtual;
-
-        private String virtualMeetingUrl;
-
-        private String virtualMeetingPassword;
-    }
 }

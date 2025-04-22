@@ -73,15 +73,7 @@ public class Venue {
      * venue record for better performance and easier maintenance.
      */
     @Embedded
-    private com.giftedlabs.eventoria.events.domain.Address address;
-
-    /**
-     * The geolocation (latitude and longitude) of the venue encapsulated as an embeddable
-     * {@code Geolocation} object. This field can be used for mapping or location-based searches.
-     */
-    @Embedded
-    private Geolocation geolocation;
-
+    private Address address;
 
     /**
      * Optional field for tracking the popularity or usage metrics of the venue. This field

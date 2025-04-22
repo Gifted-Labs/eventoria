@@ -74,9 +74,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     SELECT e FROM Event e
     WHERE 
         (6371000 * acos(
-            cos(radians(:lat)) * cos(radians(e.venue.geolocation.latitude)) *
-            cos(radians(e.venue.geolocation.longitude) - radians(:lng)) +
-            sin(radians(:lat)) * sin(radians(e.venue.geolocation.latitude))
+            cos(radians(:lat)) * cos(radians(e.venue.address.geolocation.latitude)) *
+            cos(radians(e.venue.address.geolocation.longitude) - radians(:lng)) +
+            sin(radians(:lat)) * sin(radians(e.venue.address.geolocation.latitude))
         )) <= :radiusInMeters
 """)
     Page<Event> findEventsNearLocation(

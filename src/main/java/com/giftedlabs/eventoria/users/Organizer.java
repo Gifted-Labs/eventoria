@@ -1,6 +1,7 @@
 package com.giftedlabs.eventoria.users;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.giftedlabs.eventoria.enums.UserRole;
 import com.giftedlabs.eventoria.enums.VerificationStatus;
 import com.giftedlabs.eventoria.events.domain.Event;
 import jakarta.persistence.*;
@@ -19,6 +20,10 @@ import java.util.List;
 @SuperBuilder
 @DiscriminatorValue("ORGANIZER")
 public class Organizer extends User{
+
+    public void setRole() {
+        super.setRole(UserRole.ROLE_ORGANIZER);
+    }
 
     private String organizationName;
     private String logoUrl;

@@ -2,17 +2,23 @@ package com.giftedlabs.eventoria.events.service.impl;
 
 import com.giftedlabs.eventoria.enums.Category;
 import com.giftedlabs.eventoria.enums.EventStatus;
+import com.giftedlabs.eventoria.enums.UserRole;
 import com.giftedlabs.eventoria.events.domain.Event;
-import com.giftedlabs.eventoria.events.dto.EventCreateRequestDTO;
 import com.giftedlabs.eventoria.events.dto.EventSearchRequestDTO;
-import com.giftedlabs.eventoria.events.dto.EventUpdateRequestDTO;
+import com.giftedlabs.eventoria.events.dto.request.EventCreateRequestDTO;
+import com.giftedlabs.eventoria.events.dto.request.EventUpdateRequest;
+import com.giftedlabs.eventoria.events.dto.response.EventDetailResponse;
 import com.giftedlabs.eventoria.events.dto.response.EventSummaryResponse;
 import com.giftedlabs.eventoria.events.mappers.EventMapper;
 import com.giftedlabs.eventoria.events.repository.EventRepository;
 import com.giftedlabs.eventoria.events.service.EventService;
+import com.giftedlabs.eventoria.exception.UserNotFoundException;
 import com.giftedlabs.eventoria.exception.events.EventNotFoundException;
 import com.giftedlabs.eventoria.exception.events.EventPermissionException;
+import com.giftedlabs.eventoria.exception.events.EventValidationException;
 import com.giftedlabs.eventoria.users.Organizer;
+import com.giftedlabs.eventoria.users.User;
+import com.giftedlabs.eventoria.users.UserRepository;
 import com.giftedlabs.eventoria.utils.EventSecurityUtil;
 import com.giftedlabs.eventoria.utils.EventValidationUtil;
 import jakarta.transaction.Transactional;
@@ -27,7 +33,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +43,7 @@ public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
     private final EventValidationUtil validationUtil;
     private final EventSecurityUtil securityUtil;
+    private final UserRepository userRepository;
 
     // CRUD Operations
 
@@ -49,7 +55,7 @@ public class EventServiceImpl implements EventService {
         // Validate the event data
         validationUtil.validateEventCreations(eventDTO);
 
-        // Create event eneity from DTO
+        // Create event entity from DTO
         Event event = eventMapper.toEntity(eventDTO);
 
         // Set default values
@@ -58,9 +64,14 @@ public class EventServiceImpl implements EventService {
         event.setUpdatedAt(LocalDateTime.now());
 
         // Set organizer
-        Organizer organizer = new Organizer();
-        organizer.setId(organizerId);
-        event.setOrganizer(organizer);
+        User organizer = userRepository.findById(organizerId).orElseThrow(
+                () -> new UserNotFoundException("Cannot find user with ID: "+ organizerId)
+        );
+        // Check if user can create event
+        if (!organizer.getRole().equals(UserRole.ROLE_ORGANIZER)) {
+            throw new EventValidationException("You are not authorized to create event ");
+        }
+        event.setOrganizer((Organizer) organizer);
 
         // Save the event
         Event savedEvent = eventRepository.save(event);
@@ -75,8 +86,8 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "events", key = "#eventId")
-    public Event updateEvent(Long eventId, EventUpdateRequestDTO eventDTO, Long organizerId) {
+    @CacheEvict(value = "events", key = "#id")
+    public Event updateEvent(Long eventId, EventUpdateRequest eventDTO, Long organizerId) {
         log.info("Updating event ID: {} for organizer: {}", eventId, organizerId);
 
         // Find the event
@@ -91,12 +102,19 @@ public class EventServiceImpl implements EventService {
         validationUtil.validateEventUpdate(existingEvent,eventDTO);
 
         // Update the event details from DTO
-        eventMapper.updateEventFromDTO(existingEvent, eventDTO);
+        eventMapper.updateEventFromDto(eventDTO,existingEvent);
 
         // Update timestamp
         existingEvent.setUpdatedAt(LocalDateTime.now());
 
-        return null;
+        // Save the updated event
+        Event updatedEvent = eventRepository.save(existingEvent);
+        log.info("Event ID: {} updated successfully", eventId);
+
+        // Send notification to users who registered for the event
+        // notificationService.sendEventUpdateNotification(updatedEvent);
+
+        return updatedEvent;
     }
 
 
@@ -109,10 +127,22 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    @Cacheable(value = "events", key = "eventId", unless = "result.isEmpty()")
-    public Optional<Event> findEventById(Long eventId) {
+    public Page<EventDetailResponse> getAllEvents(int page, int size) {
+        log.info("Fetching all events with page of {} and size {}",page,size );
+        // Convert page and size into pageable
+        Pageable pageable = Pageable.ofSize(size).withPage(page);
+        // Fetch events from repository
+        Page<Event> events = eventRepository.findAll(pageable);
+        // Map events to DTOs
+        return events.map(eventMapper::toDetailResponse);
+    }
+
+    @Cacheable(value = "events", key = "#root.args[0]", unless = "#result==null")
+    public EventDetailResponse findEventById(Long eventId) {
         log.info("Finding event with ID: {}", eventId);
-        return eventRepository.findById(eventId);
+        return eventRepository.findById(eventId).map(eventMapper::toDetailResponse).orElseThrow(
+                () -> new EventNotFoundException("Event not found with ID: " + eventId)
+        );
     }
 
     @Override
@@ -298,6 +328,8 @@ public class EventServiceImpl implements EventService {
 
         return archivedEvent;
     }
+    
+    
 
     @Override
     public List<Event> batchUpdateEventStatus(List<Long> eventIds, EventStatus newStatus, Long organizerId) {

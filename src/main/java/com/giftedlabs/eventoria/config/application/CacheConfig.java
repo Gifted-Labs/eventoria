@@ -28,6 +28,7 @@ public class CacheConfig {
 
         // Configure Caches
         cacheManager.setCacheNames(Arrays.asList(
+                "events",
                 "eventDetails",
                 "eventSummaries",
                 "upcomingEvents",
@@ -40,5 +41,8 @@ public class CacheConfig {
 
         return cacheManager;
     }
+
+
+
 
 }

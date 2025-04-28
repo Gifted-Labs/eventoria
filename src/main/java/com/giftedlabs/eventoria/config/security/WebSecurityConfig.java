@@ -44,14 +44,14 @@ public class WebSecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/password/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
                                 "/error",
                                 "/logout",
-                                "/signout"
+                                "/signout",
+                                "/webjars/**"
                         ).permitAll()
-                        .requestMatchers("api/events/**").permitAll()
+                        .requestMatchers("api/events/**", "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html").permitAll()
                         .requestMatchers("/", "/index.html","/index.html/api/auth/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().fullyAuthenticated()

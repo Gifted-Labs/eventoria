@@ -10,6 +10,11 @@ import com.giftedlabs.eventoria.events.dto.response.EventResponse;
 import com.giftedlabs.eventoria.events.mappers.EventMapper;
 import com.giftedlabs.eventoria.events.service.EventService;
 import com.giftedlabs.eventoria.utils.EventSecurityUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +39,23 @@ public class EventController {
     private final EventService eventService;
     private final EventSecurityUtil securityUtil;
 
+
+    @Operation(summary="Retrieve an event by ID", description = "Get an event object by specifying its id. The response includes full event details.\n")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Event found",
+                    content = @Content(schema = @Schema(implementation = EventResponse.class))),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event not found",
+                    content = @Content),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized",
+                    content = @Content)
+    })
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<EventDetailResponse> getEventById(@PathVariable Long id) {
         log.info("REST request to get event by id: {}", id);
         EventDetailResponse eventDetailResponse = eventService.findEventById(id);

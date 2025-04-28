@@ -15,6 +15,11 @@ spring:
   profiles:
     active: dev
 
+  cache:
+    caffeine:
+        spec: maximumSize=500,expireAfterAccess=30m,recordStats
+        cache-names: userCache, eventCache, eventTypeCache, eventCategoryCache, eventStatusCache
+
 app:
   jwt:
     ExpirationMs: ${JWT_EXPIRATION_IN_MS}
@@ -28,3 +33,25 @@ management:
 
 
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    doc-expansion: none
+    filter: true
+    persist-authorization: true
+    display-request-duration: true
+    try-it-out-enabled: true
+    syntax-highlight:
+      activate: true
+      theme: obsidian
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: com.giftedlabs.eventoria
+  cache:
+    disabled: false
+
+openapi:
+  dev-url: http://localhost:5000
+  prod-url: https://api.eventoria.com

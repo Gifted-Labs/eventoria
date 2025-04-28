@@ -346,11 +346,6 @@ public class EventServiceImpl implements EventService {
     @Override
     public Page<Event> searchEvents(EventSearchRequestDTO searchRequest, Pageable pageable) {
         log.info("Searching events with criteria: {}", searchRequest);
-
-        Specification<Event> specification = EventSpecification.withDynamicQuery(
-                searchRequest
-        )
-
         return null;
     }
 
@@ -361,12 +356,16 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Page<Event> findEventsByOrganizer(Long organizerId, Pageable pageable) {
-        return null;
+        Page<Event> events = eventRepository.findByOrganizerId(organizerId, pageable);
+        if (events.isEmpty()) {
+            throw new EventNotFoundException("No events found for organizer with ID: " + organizerId);
+        }
+        return events;
     }
 
     @Override
     public Page<Event> findEventsByCategory(Category category, Pageable pageable) {
-        return null;
+        return eventRepository.findByCategory(category, pageable);
     }
 
     @Override
@@ -376,22 +375,46 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Page<EventSummaryResponse> findFeaturedEvents(Pageable pageable) {
-        return null;
+        Page<Event> featuredEvents = eventRepository.findByIsFeaturedTrue(pageable);
+        return featuredEvents.map(eventMapper::toSummaryResponse);
     }
 
     @Override
     public Page<EventSummaryResponse> findUpcomingEvents(Pageable pageable) {
-        return null;
+        Page<Event> upcomingEvents = eventRepository.findEventByStartDateAfter(LocalDateTime.now(), pageable);
+        return upcomingEvents.map(eventMapper::toSummaryResponse);
     }
 
     @Override
     public Page<Event> findNearbyEvents(Double latitude, Double longitude, Double radiusInKm, Pageable pageable) {
-        return null;
+        Page<Event> eventsNearby = eventRepository.findEventsNearLocation(latitude,longitude,radiusInKm,pageable);
+        // Validate the radius value
+        if (radiusInKm <= 0) {
+            throw new EventValidationException("Invalid radius value: " + radiusInKm);
+        }
+
+        if(eventsNearby.isEmpty()) {
+            throw new EventNotFoundException("No events found within the specified radius");
+        }
+        return eventsNearby;
     }
 
     @Override
-    public Event setEventFeatured(Long eventId, Long organizerId) {
-        return null;
+    public Event setEventFeatured(Long eventId, Long userId) {
+        Event existingEvent = eventRepository.findById(eventId).orElseThrow(
+                () -> new EventNotFoundException("Event not found with ID: " + eventId)
+        );
+
+        // Get the User trying to perform the action
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new UserNotFoundException("User not found with ID: " + userId)
+        );
+        if(!securityUtil.isUserAdmin(user)){
+            throw new EventPermissionException("User not authorized to set event as featured");
+        }
+        existingEvent.setFeatured(true);
+        existingEvent.setUpdatedAt(LocalDateTime.now());
+        return eventRepository.save(existingEvent);
     }
 
     @Override
@@ -441,7 +464,11 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public Page<Event> getRecommendedEvents(Long userId, Pageable pageable) {
-        return null;
+        // Check if the user exists
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new UserNotFoundException("User not found with ID: " + userId)
+        );
+        return eventRepository.findRecommendedEventsForParticipant(userId,LocalDateTime.now(), pageable);
     }
 
     @Override

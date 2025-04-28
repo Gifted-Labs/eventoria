@@ -1,11 +1,18 @@
 package com.giftedlabs.eventoria.utils;
 
 
+import com.giftedlabs.eventoria.authentication.service.impl.UserDetailsServiceImpl;
+import com.giftedlabs.eventoria.enums.UserRole;
 import com.giftedlabs.eventoria.events.domain.Event;
 import com.giftedlabs.eventoria.events.domain.Registration;
+import com.giftedlabs.eventoria.users.User;
+import com.giftedlabs.eventoria.users.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
+import java.security.Principal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -17,10 +24,12 @@ import java.util.UUID;
  */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class EventSecurityUtil {
 
     private static final SecureRandom secureRandom = new SecureRandom();
     private static final Base64.Encoder base64Encoder = Base64.getUrlEncoder();
+    private final UserRepository userRepository;
 
     /**
      * Check if a user is the organizer of an event
@@ -198,5 +207,29 @@ public class EventSecurityUtil {
 
         // In a real implementation, this would be signed or encrypted
         return base64Encoder.encodeToString(tokenData.getBytes());
+    }
+
+    /**
+     * Check if the user is an admin before he performs an operation
+     *
+     * @param user The user
+     *
+     */
+    public boolean isUserAdmin(User user) {
+        return user.getRole().equals(UserRole.ROLE_ADMIN);
+    }
+
+    public Long getAuthenticatedUserId(Principal principal) {
+        if (principal == null) {
+            throw new SecurityException("No authenticated user");
+        }
+
+        // Assuming the principal contains the user ID
+        String username = principal.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseGet(() -> userRepository.findByEmail(username)
+                        .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username)));
+
+        return user.getId();
     }
 }

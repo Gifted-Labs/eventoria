@@ -19,7 +19,7 @@ public class EventSpecification {
             Category category,
             LocalDateTime startDateFrom,
             LocalDateTime startDateTo,
-            EventStatus eventState,
+            EventStatus eventStatus,
             Boolean isTicketed,
             Boolean isFeatured,
             Long organizerId,
@@ -56,8 +56,8 @@ public class EventSpecification {
                         root.get("startDate"), startDateTo));
             }
 
-            if (eventState != null) {
-                predicates.add(criteriaBuilder.equal(root.get("eventState"), eventState));
+            if (eventStatus != null) {
+                predicates.add(criteriaBuilder.equal(root.get("eventStatus"), eventStatus));
             }
 
             if (isTicketed != null) {
@@ -74,13 +74,13 @@ public class EventSpecification {
 
             if (city != null && !city.isEmpty()) {
                 predicates.add(criteriaBuilder.equal(
-                        criteriaBuilder.lower(root.get("venue").get("city")),
+                        criteriaBuilder.lower(root.get("venue").get("address").get("city")),
                         city.toLowerCase()));
             }
 
             if (state != null && !state.isEmpty()) {
                 predicates.add(criteriaBuilder.equal(
-                        criteriaBuilder.lower(root.get("venue").get("state")),
+                        criteriaBuilder.lower(root.get("venue").get("address").get("state")),
                         state.toLowerCase()));
             }
 
@@ -105,14 +105,14 @@ public class EventSpecification {
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), likePattern),
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), likePattern),
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("venue").get("name")), likePattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("venue").get("city")), likePattern)
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("venue").get("address").get("city")), likePattern)
             );
         };
     }
 
     public static Specification<Event> isPublished() {
         return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("eventState"), EventStatus.PUBLISHED);
+                criteriaBuilder.equal(root.get("eventStatus"), EventStatus.PUBLISHED);
     }
 
     public static Specification<Event> isUpcoming() {

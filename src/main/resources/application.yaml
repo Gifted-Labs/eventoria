@@ -19,6 +19,9 @@ spring:
     caffeine:
         spec: maximumSize=500,expireAfterAccess=30m,recordStats
         cache-names: userCache, eventCache, eventTypeCache, eventCategoryCache, eventStatusCache
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
 
 app:
   jwt:
@@ -46,11 +49,18 @@ springdoc:
     syntax-highlight:
       activate: true
       theme: obsidian
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - url: /v3/api-docs
+        name: Eventoria API
+    disable-swagger-default-url: true
   api-docs:
     path: /v3/api-docs
   packages-to-scan: com.giftedlabs.eventoria
   cache:
     disabled: false
+  show-actuator: true
+
 
 openapi:
   dev-url: http://localhost:5000

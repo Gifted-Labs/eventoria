@@ -7,10 +7,12 @@ import com.giftedlabs.eventoria.events.dto.request.EventUpdateRequest;
 import com.giftedlabs.eventoria.events.dto.request.PostponeEventRequest;
 import com.giftedlabs.eventoria.events.dto.response.EventDetailResponse;
 import com.giftedlabs.eventoria.events.dto.response.EventResponse;
+import com.giftedlabs.eventoria.events.dto.response.EventSummaryResponse;
 import com.giftedlabs.eventoria.events.mappers.EventMapper;
 import com.giftedlabs.eventoria.events.service.EventService;
 import com.giftedlabs.eventoria.utils.EventSecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,6 +21,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -69,7 +74,54 @@ public class EventController {
         return ResponseEntity.ok(eventDetailResponse);
     }
 
-    // Get all events pageable
+    /**
+     * Retrieves a paginated list of events.
+     *
+     * This endpoint allows clients to fetch a paginated list of all events.
+     * The results can be customized by specifying the page number and the number of items per page.
+     *
+     * @param page The page number for the results, default is 0 (zero-based index).
+     *             Example: `0` for the first page, `1` for the second page, etc.
+     * @param size The number of items per page, default is 10.
+     *             Example: `10` for 10 items per page.
+     * @return A ResponseEntity containing a Page of EventDetailResponse objects.
+     *         - HTTP 200: Successfully retrieved the list of events.
+     *         - HTTP 401: Unauthorized - Authentication is required.
+     *         - HTTP 403: Forbidden - Insufficient permissions.
+     *         - HTTP 500: Internal Server Error - Unexpected server error.
+     *
+     * @apiNote This endpoint is accessible to all authenticated users.
+     */
+    @Operation(
+            summary = "Retrieve a paginated list of events",
+            description = "Fetches a paginated list of all events. Clients can specify the page number and size to customize the results.",
+            tags = {"Events"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the list of events",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = Page.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication is required",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "Forbidden - Insufficient permissions",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Internal Server Error - Unexpected server error",
+                            content = @Content
+                    )
+            }
+    )
     @GetMapping
     public ResponseEntity<Page<EventDetailResponse>> getAllEvents(@RequestParam(defaultValue = "0") int page,
                                                                   @RequestParam(defaultValue = "10") int size) {
@@ -180,12 +232,48 @@ public class EventController {
     }
 
     /**
-     * Marks an event as completed
+     * Marks an event as completed.
      *
-     * @param eventId   ID of the event to complete
-     * @param principal Authenticated user
-     * @return Completed event details
+     * This endpoint allows an authenticated user with the role of "ROLE_ORGANIZER" or "ROLE_ADMIN"
+     * to mark an event as completed. The event must exist, and the user must have the necessary
+     * permissions to perform this action.
+     *
+     * @param eventId   The ID of the event to complete. This is a required path variable.
+     * @param principal The authenticated user making the request. This is automatically provided
+     *                  by the security context.
+     * @return A ResponseEntity containing the details of the completed event in the response body.
+     *         Returns HTTP 200 (OK) if the operation is successful.
+     *
+     * @apiNote This operation is restricted to users with the "ROLE_ORGANIZER" or "ROLE_ADMIN" roles.
+     *          Ensure the event exists and the user has the appropriate permissions before calling this endpoint.
      */
+    @Operation(
+            summary = "Mark an event as completed",
+            description = "Allows users with the roles 'ROLE_ORGANIZER' or 'ROLE_ADMIN' to mark an event as completed.",
+            tags = {"Events"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Event successfully marked as completed",
+                            content = @Content(schema = @Schema(implementation = EventResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Event not found",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "Forbidden - insufficient permissions",
+                            content = @Content
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - authentication required",
+                            content = @Content
+                    )
+            }
+    )
     @PostMapping("/{eventId}/complete")
     @Secured({"ROLE_ORGANIZER", "ROLE_ADMIN"})
     public ResponseEntity<EventResponse> completeEvent(
@@ -213,6 +301,58 @@ public class EventController {
         Long organizerId = securityUtil.getAuthenticatedUserId(principal);
         Event archivedEvent = eventService.archiveEvent(eventId, organizerId);
         return ResponseEntity.ok(eventMapper.toResponse(archivedEvent));
+    }
+
+
+    /**
+     * @apiNote Retrieves upcoming events that have not yet started
+     * @return Paginated list of upcoming event summaries
+     */
+    @Operation(
+            summary = "Get upcoming events",
+            description = "Retrieves all events with start dates in the future, sorted and paginated according to the specified parameters",
+            tags = {"Events"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved upcoming events",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content
+            )
+    })
+    @GetMapping("/upcoming")
+    public ResponseEntity<Page<EventSummaryResponse>> getUpcomingEvents(
+            @Parameter(description = "Page number (zero-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Number of items per page", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+
+            @Parameter(description = "Field to sort by", example = "startDate")
+            @RequestParam(defaultValue = "startDate") String sortBy,
+
+            @Parameter(description = "Sort direction ('asc' or 'desc')", example = "asc")
+            @RequestParam(defaultValue = "asc") String direction) {
+
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ?
+                Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+        Page<EventSummaryResponse> upcomingEvents = eventService.findUpcomingEvents(pageable);
+        return ResponseEntity.ok(upcomingEvents);
     }
 
 

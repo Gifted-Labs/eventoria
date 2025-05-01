@@ -1,21 +1,24 @@
 package com.giftedlabs.eventoria.config.application;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@OpenAPIDefinition
 public class OpenApiConfig {
 
-    @Value("{openapi.dev-url}")
+    @Value("${openapi.dev-url}")
     private String devUrl;
 
-    @Value("{openapi.prod-url}")
+    @Value("${openapi.prod-url}")
     private String prodUrl;
 
     @Bean
@@ -58,7 +61,8 @@ public class OpenApiConfig {
                                         .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("JWT Authorization header using the Bearer scheme")));
+                                        .description("JWT Authorization header using the Bearer scheme")))
+                .addSecurityItem(new SecurityRequirement().addList("bearer-auth"));
     }
 
 }

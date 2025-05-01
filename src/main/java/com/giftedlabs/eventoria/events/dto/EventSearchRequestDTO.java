@@ -56,6 +56,7 @@ public class EventSearchRequestDTO {
     private Boolean featuredOnly;
     private Boolean isVirtual;
 
+
     // Sorting
     private List<SortField> sortFields; // Supports multi-field sorting
 

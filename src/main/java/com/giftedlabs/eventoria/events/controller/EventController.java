@@ -2,6 +2,7 @@ package com.giftedlabs.eventoria.events.controller;
 
 
 import com.giftedlabs.eventoria.events.domain.Event;
+import com.giftedlabs.eventoria.events.dto.EventSearchRequestDTO;
 import com.giftedlabs.eventoria.events.dto.request.EventCreateRequestDTO;
 import com.giftedlabs.eventoria.events.dto.request.EventUpdateRequest;
 import com.giftedlabs.eventoria.events.dto.request.PostponeEventRequest;
@@ -25,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +34,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -356,4 +360,90 @@ public class EventController {
     }
 
 
+    /**
+     * Searches events based on complex criteria provided in the request body.
+     * Supports filtering by multiple parameters like keyword, category, location, price range, etc.
+     * Results are paginated and can be sorted by specified fields.
+     *
+     * @param searchRequest The DTO containing all search parameters and criteria
+     * @return A paginated response of events matching the search criteria
+     */
+    @PostMapping(value = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+            summary = "Search events with advanced criteria",
+            description = "Search for events using multiple filters including keyword, category, " +
+                    "date range, location, price range, and more. Results are paginated and sortable."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Events successfully retrieved",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Page.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid search parameters provided"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<Page<Event>> searchEvents(
+            @Parameter(description = "Search criteria and parameters", required = true)
+            @Valid @RequestBody EventSearchRequestDTO searchRequest) {
+
+        log.info("Received event search request: {}", searchRequest);
+
+        try {
+            // Apply default values if not specified
+            if (searchRequest.getPage() == null) {
+                searchRequest.setPage(0);
+            }
+
+            if (searchRequest.getSize() == null) {
+                searchRequest.setSize(10);
+            }
+
+            // Create pageable object with sorting if provided
+            Pageable pageable;
+            if (searchRequest.getSortFields() != null && !searchRequest.getSortFields().isEmpty()) {
+                List<Sort.Order> orders = new ArrayList<>();
+
+                // Process each sort field
+                for (EventSearchRequestDTO.SortField sortField : searchRequest.getSortFields()) {
+                    Sort.Direction direction = "DESC".equalsIgnoreCase(sortField.getDirection())
+                            ? Sort.Direction.DESC
+                            : Sort.Direction.ASC;
+
+                    orders.add(new Sort.Order(direction, sortField.getField()));
+                }
+
+                pageable = PageRequest.of(
+                        searchRequest.getPage(),
+                        searchRequest.getSize(),
+                        Sort.by(orders)
+                );
+            } else {
+                // Default sorting by start date if not specified
+                pageable = PageRequest.of(
+                        searchRequest.getPage(),
+                        searchRequest.getSize(),
+                        Sort.by(Sort.Direction.ASC, "startDate")
+                );
+            }
+
+            // Execute search and return results
+            Page<Event> events = eventService.searchEvents(searchRequest, pageable);
+
+            log.info("Found {} events matching search criteria", events.getTotalElements());
+
+            return ResponseEntity.ok(events);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid search parameters: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error occurred while searching events", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }
+
+
+
+

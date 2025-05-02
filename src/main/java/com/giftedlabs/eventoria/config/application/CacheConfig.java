@@ -22,6 +22,7 @@ public class CacheConfig {
     public static final String EVENTS_CACHE = "events";
     public static final String EVENT_DETAILS_CACHE = "eventDetails";
     public static final String EVENT_SUMMARIES_CACHE = "eventSummaries";
+    public static final String EVENT_SEARCH = "eventsSearch";
     public static final String UPCOMING_EVENTS_CACHE = "upcomingEvents";
     public static final String FEATURED_EVENTS_CACHE = "featuredEvents";
     public static final String EVENT_ANALYTICS_CACHE = "eventAnalytics";
@@ -55,6 +56,13 @@ public class CacheConfig {
                         .recordStats()
                         .build());
 
+        cacheManager.registerCustomCache(EVENT_SEARCH,
+                Caffeine.newBuilder()
+                        .maximumSize(2000)
+                        .expireAfterWrite(1, TimeUnit.HOURS)
+                        .recordStats()
+                        .build());
+
         cacheManager.registerCustomCache(UPCOMING_EVENTS_CACHE,
                 Caffeine.newBuilder()
                         .maximumSize(500)
@@ -84,6 +92,7 @@ public class CacheConfig {
                 UPCOMING_EVENTS_CACHE,
                 FEATURED_EVENTS_CACHE,
                 EVENT_ANALYTICS_CACHE,
+                EVENT_SEARCH,
                 ORGANIZER_ANALYTICS_CACHE,
                 USER_ANALYTICS_CACHE,
                 PLATFORM_ANALYTICS_CACHE

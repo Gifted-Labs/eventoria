@@ -53,6 +53,8 @@ public class Event {
 
     private boolean isTicketed;
 
+    private Integer rating;
+
     private boolean isFeatured;
 
     @ManyToOne(fetch = FetchType.LAZY)

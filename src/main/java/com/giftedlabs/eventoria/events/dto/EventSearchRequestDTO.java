@@ -56,6 +56,13 @@ public class EventSearchRequestDTO {
     private Boolean featuredOnly;
     private Boolean isVirtual;
 
+    // Rating filters
+//    private Double minRating;
+//    private Double maxRating;
+//    private Integer minReviews;
+
+    // Event organizer
+    private Long organizerId;
 
     // Sorting
     private List<SortField> sortFields; // Supports multi-field sorting

@@ -11,7 +11,7 @@ import com.giftedlabs.eventoria.events.dto.response.EventDetailResponse;
 import com.giftedlabs.eventoria.events.dto.response.EventSummaryResponse;
 import com.giftedlabs.eventoria.events.mappers.EventMapper;
 import com.giftedlabs.eventoria.events.repository.EventRepository;
-import com.giftedlabs.eventoria.events.repository.EventSpecification;
+import com.giftedlabs.eventoria.events.repository.specs.EventSpecification;
 import com.giftedlabs.eventoria.events.service.EventService;
 import com.giftedlabs.eventoria.exception.UserNotFoundException;
 import com.giftedlabs.eventoria.exception.events.EventNotFoundException;
@@ -344,9 +344,41 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Cacheable(value = "eventsSearch", key = "#searchRequest.hashCode().toString().concat('-').concat(#pageable.pageNumber.toString()).concat('-').concat(#pageable.pageSize.toString())", unless = "#result == null or #result.isEmpty()")
     public Page<Event> searchEvents(EventSearchRequestDTO searchRequest, Pageable pageable) {
         log.info("Searching events with criteria: {}", searchRequest);
-        return null;
+
+        // Build the specification based on the search request
+        Specification<Event> spec = EventSpecification.buildSpecification(
+                searchRequest.getKeyword(),
+                searchRequest.getCategories(),
+                searchRequest.getStatuses(),
+                searchRequest.getStartDateFrom(),
+                searchRequest.getStartDateTo(),
+                searchRequest.getExactStartDate(),
+                searchRequest.getExactEndDate(),
+                searchRequest.getTicketedOnly(),
+                searchRequest.getFreeOnly(),
+                searchRequest.getFeaturedOnly(),
+                searchRequest.getOrganizerId(),
+                searchRequest.getCity(),
+                searchRequest.getState(),
+                searchRequest.getCountry(),
+                searchRequest.getLatitude(),
+                searchRequest.getLongitude(),
+                searchRequest.getRadiusInKm(),
+                searchRequest.getMinPrice(),
+                searchRequest.getMaxPrice(),
+                searchRequest.getMinCapacity(),
+                searchRequest.getMaxCapacity(),
+                searchRequest.getIncludeTags(),
+                searchRequest.getExcludeTags(),
+//                searchRequest.getMinRating(),
+//                searchRequest.getMaxRating(),
+//                searchRequest.getMinReviews(),
+                searchRequest.getIsVirtual()
+        );
+        return eventRepository.findAll(spec, pageable);
     }
 
     @Override

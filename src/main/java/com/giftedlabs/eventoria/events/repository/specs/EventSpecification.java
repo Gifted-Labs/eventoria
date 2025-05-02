@@ -47,9 +47,9 @@ public class EventSpecification {
             Integer maxCapacity,
             List<String> includeTags,
             List<String> excludeTags,
-            Double minRating,
-            Double maxRating,
-            Integer minReviews,
+//            Double minRating,
+//            Double maxRating,
+//            Integer minReviews,
             Boolean isVirtual) {
 
         return (root, query, criteriaBuilder) -> {
@@ -66,7 +66,7 @@ public class EventSpecification {
 
             // Category filter
             if(categories != null && !categories.isEmpty()) {
-                predicates.add(criteriaBuilder.equal(root.get("category"), categories));
+                predicates.add(root.get("category").in(categories));
             }
 
             // City filter
@@ -122,12 +122,12 @@ public class EventSpecification {
             }
 
             // Price filters
-            if (minPrice != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice));
-            }
-            if (maxPrice != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice));
-            }
+//            if (minPrice != null) {
+//                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice));
+//            }
+//            if (maxPrice != null) {
+//                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice));
+//            }
 
             // Capacity filters
             if (minCapacity != null) {

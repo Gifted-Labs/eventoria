@@ -63,7 +63,7 @@ public class AuthenticationService {
                 state(signUpRequest.state()).
                 country(signUpRequest.country()).
                 createdAt(LocalDateTime.now()).
-                role(UserRole.ROLE_ATTENDEE).
+                role(UserRole.ROLE_ORGANIZER).
                 isEnabled(false).
                 build();
 

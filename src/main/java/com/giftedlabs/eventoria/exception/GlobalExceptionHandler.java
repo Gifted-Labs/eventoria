@@ -12,7 +12,7 @@ import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
 
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.giftedlabs.eventoria")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyExistException.class)

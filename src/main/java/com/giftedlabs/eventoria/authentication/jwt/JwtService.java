@@ -34,7 +34,8 @@ public class JwtService {
         Map<String, Object> claims = Map.of(
                 "id", userDetails.getId(),
                 "email", userDetails.getEmail(),
-                "username", userDetails.getUsername()
+                "username", userDetails.getUsername(),
+                "roles",userDetails.getAuthorities()
         );
 
         return Jwts.builder()
